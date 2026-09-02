@@ -1,0 +1,12 @@
+
+DATABASE POSTGRES
+db_user = nicinsurance
+db_user_pass = nicinsurance123
+db_name =  nic_training_needs_analysis
+port = 5433
+
+
+ SUPERUSER
+ email =  nicinsurancetz@nicinsurance.co.tz
+ username = nicinsurancetz
+ password =  nictz12345

@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, MessageSquare, Loader2, Search, Filter, ArrowLeft } from 'lucide-react';
+import {
+  CheckCircle, XCircle, MessageSquare, ChevronDown,
+  FileText, X, Send,
+  Loader2, Search, Filter, ArrowLeft
+} from 'lucide-react';
 import { api } from '../../auth/api';
 
 const RequestApprovalQueue = () => {
@@ -11,6 +15,7 @@ const RequestApprovalQueue = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [approvalAction, setApprovalAction] = useState({ action: '', comments: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [approvalSummary, setApprovalSummary] = useState(null);
 
   useEffect(() => {
     fetchRequests();
@@ -20,6 +25,7 @@ const RequestApprovalQueue = () => {
     setLoading(true);
     try {
       const data = await api.tna.getRequests();
+      console.log(data)
       setRequests(data);
     } catch (err) {
       setError(err.message);
@@ -32,7 +38,12 @@ const RequestApprovalQueue = () => {
     if (!selectedRequest) return;
     setIsSubmitting(true);
     try {
-      await api.tna.approveRequest(selectedRequest.id, approvalAction);
+      const result = await api.tna.approveRequest(selectedRequest.id, approvalAction);
+      setApprovalSummary(result.summary ? {
+        status: result.summary_status,
+        text: result.summary,
+        citations: result.summary_citations || [],
+      } : null);
       setSelectedRequest(null);
       setApprovalAction({ action: '', comments: '' });
       await fetchRequests();
@@ -101,6 +112,18 @@ const RequestApprovalQueue = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {approvalSummary && (
+          <div className="lg:col-span-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+            <div className="flex items-center gap-2 text-emerald-900">
+              <MessageSquare className="w-5 h-5" />
+              <h2 className="font-bold">Grounded training summary</h2>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-emerald-950">{approvalSummary.text || 'The summary could not be generated.'}</p>
+            <p className="mt-3 text-xs text-emerald-700">
+              Status: {approvalSummary.status}. Sources: {approvalSummary.citations.length || 0}
+            </p>
+          </div>
+        )}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -122,7 +145,7 @@ const RequestApprovalQueue = () => {
                         <p className="text-[10px] text-slate-400">{new Date(req.created_at).toLocaleDateString()}</p>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        {req.employee?.full_name || 'Unknown'}
+                        {req.employee_name || 'Unknown'}
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-slate-700">
                         {req.estimated_cost?.toLocaleString()}
@@ -178,7 +201,7 @@ const RequestApprovalQueue = () => {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Employee</p>
-                  <p className="text-sm font-medium text-slate-700">{selectedRequest.employee?.full_name || 'Unknown'}</p>
+                  <p className="text-sm font-medium text-slate-700">{selectedRequest.employee_name || 'Unknown'}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Justification</p>
@@ -191,6 +214,16 @@ const RequestApprovalQueue = () => {
                 <div className="space-y-1">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Estimated Cost</p>
                   <p className="text-lg font-bold text-[#264033]">{selectedRequest.estimated_cost?.toLocaleString()} TZS</p>
+                </div>
+                <div className="space-y-1 grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Start date</p>
+                    <p className="text-lg font-bold text-[#264033]">{selectedRequest.start_date}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Due To </p>
+                    <p className="text-lg font-bold text-[#264033]">{selectedRequest.end_date}</p>
+                  </div>
                 </div>
 
                 <div className="pt-6 border-t border-slate-100 space-y-4">

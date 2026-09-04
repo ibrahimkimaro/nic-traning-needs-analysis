@@ -5,7 +5,8 @@ from .views import (
     LoginView, UserMeView, UserProfileUpdateView, LogoutView,
     RoleListView, UserListView, UserDetailView,
     DepartmentListView, DepartmentDetailView,
-    PositionListView, PositionDetailView
+    PositionListView, PositionDetailView , 
+    UserDeleteView
 )
 
 urlpatterns = [
@@ -26,7 +27,7 @@ urlpatterns = [
     path('staff/<uuid:pk>/', UserDetailView.as_view(), name='staff-detail'),
     path('employees/', UserListView.as_view(), name='employee-list'),
     path('employees/<uuid:pk>/', UserDetailView.as_view(), name='employee-detail'),
-
+    path('delete/<uuid:pk>/', UserDeleteView.as_view(), name='user-delete'),
     # Departments
     path('departments/', DepartmentListView.as_view(), name='department-list'),
     path('departments/<int:pk>/', DepartmentDetailView.as_view(), name='department-detail'),

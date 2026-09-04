@@ -21,7 +21,9 @@ import './App.css';
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('accessToken');
   if (!token) {
+    console.log("jau sana")
     return <Navigate to="/" replace />;
+
   }
   return children;
 };

@@ -3,11 +3,13 @@ from .views import (
     TrainingRequestListView, TrainingRequestDetailView,
     TrainingRequestCreateView, TrainingRequestApprovalView,
     TrainingRequestAttachmentView, GapAnalysisView,
-    TrainingRecommendationsView, DepartmentSkillMatrixView
+    TrainingRecommendationsView, DepartmentSkillMatrixView,
+    MyTrainingRequestsView
 )
 
 urlpatterns = [
-    path('requests/', TrainingRequestListView.as_view(), name='request-list'),
+    path('requests/', TrainingRequestListView.as_view(), name='all request-list'),
+    path('requests/me/',MyTrainingRequestsView.as_view(),name="list of my request"),
     path('requests/create/', TrainingRequestCreateView.as_view(), name='request-create'),
     path('requests/<uuid:pk>/', TrainingRequestDetailView.as_view(), name='request-detail'),
     path('requests/<uuid:pk>/approve/', TrainingRequestApprovalView.as_view(), name='request-approve'),

@@ -17,4 +17,6 @@ class ApprovalDelegateAdmin(admin.ModelAdmin):
 
 @admin.register(Attachment)
 class AttachmentAdmin(admin.ModelAdmin):
-    list_display = ('request', 'file_name',)
+    list_display = ('request', 'file_name', 'document_type', 'approval_status', 'uploaded_by')
+    list_filter = ('document_type', 'approval_status')
+    search_fields = ('file_name', 'request__title', 'uploaded_by__username')

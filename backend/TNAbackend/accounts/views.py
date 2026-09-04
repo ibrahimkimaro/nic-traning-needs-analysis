@@ -117,6 +117,13 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
             return UserCreateUpdateSerializer
         return UserSerializer
 
+class UserDeleteView(generics.DestroyAPIView):
+    """
+    Delete a staff user.
+    """
+    queryset = User.objects.all()
+    permission_classes = [permissions.IsAdminUser]
+
 class DepartmentListView(generics.ListCreateAPIView):
     queryset = Department.objects.all().select_related('head', 'parent_dept')
     serializer_class = DepartmentSerializer

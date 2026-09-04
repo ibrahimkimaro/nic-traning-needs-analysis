@@ -11,6 +11,7 @@ class Role(TimeStampedModel):
         ('FINANCE', 'Finance / Budget Approver'),
         ('EMPLOYEE', 'Employee'),
         ('TRAINER', 'Trainer'),
+        ('DIRECTOR','Manager Director'),
     ]
     role_name = models.CharField(max_length=50, choices=ROLE_CHOICES, unique=True)
     description = models.TextField(blank=True, null=True)

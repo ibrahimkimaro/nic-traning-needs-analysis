@@ -4,11 +4,14 @@ import {
   LayoutDashboard, FileText, CheckCircle2, AlertCircle, Clock, Award,
   BookOpen, Plus, Search, ChevronRight, User, Shield, ArrowUpRight,
   TrendingUp, Calendar, AlertTriangle, Layers, Bell, LogOut, Globe,
-  Briefcase, Building2, Check, Sparkles, Send, Paperclip, X, Loader2
+  Briefcase, Building2, Check, Sparkles, Send, Paperclip, X, Loader2, MessageSquare
 } from 'lucide-react';
 import { api } from '../auth/api';
+import TrainingRequestForm from './tna/TrainingRequestForm';
+import TrainingRequests from './tna/TrainingRequests';
+import RequestApprovalQueue from './tna/RequestApprovalQueue';
 
-const translations = {
+export const translations = {
   en: {
     portalTitle: 'Training Needs Analysis Portal',
     welcomeBack: 'Welcome back',
@@ -31,6 +34,7 @@ const translations = {
     submitNewRequest: 'Submit Training Request',
     tabOverview: 'Workspace Overview',
     tabRequests: 'My Training Requests',
+    tabRequestsApproval: 'Requests Approval',
     tabCompetencies: 'Skill & Gap Analysis',
     tabEnrollments: 'My Enrollments',
     tabCompliance: 'Certifications & Compliance',
@@ -65,6 +69,7 @@ const translations = {
     submitNewRequest: 'Wasilisha Ombi Jipya la Mafunzo',
     tabOverview: 'Muhtasari wa Eneo-kazi',
     tabRequests: 'Maombi Yangu ya Mafunzo',
+    tabRequestsApproval: 'Maombi Yanayoidhinishwa',
     tabCompetencies: 'Uchambuzi wa Pengo la Ujuzi',
     tabEnrollments: 'Mafunzo Yangu',
     tabCompliance: 'Vyeti & Uzingatiaji',
@@ -94,15 +99,7 @@ const HomePage = () => {
 
   // Modal State for New Training Request
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
-  const [submittingRequest, setSubmittingRequest] = useState(false);
-  const [requestError, setRequestError] = useState(null);
-  const [requestSuccess, setRequestSuccess] = useState(false);
-  const [requestForm, setRequestForm] = useState({
-    title: '',
-    reason: '',
-    desired_outcome: '',
-    estimated_cost: '',
-  });
+  const [requestInitialData, setRequestInitialData] = useState({});
 
   const t = translations[lang] || translations.en;
 
@@ -125,7 +122,7 @@ const HomePage = () => {
 
       // 2. Load Requests & Programs
       const [requests, enrollments, programs] = await Promise.all([
-        api.tna.getRequests().catch(() => []),
+        api.tna.getMyRequests().catch(() => []),
         api.training.getEnrollments().catch(() => []),
         api.training.getPrograms().catch(() => []),
       ]);
@@ -161,37 +158,7 @@ const HomePage = () => {
     setLang(prev => prev === 'en' ? 'sw' : 'en');
   };
 
-  const handleCreateRequest = async (e) => {
-    e.preventDefault();
-    setSubmittingRequest(true);
-    setRequestError(null);
-    setRequestSuccess(false);
 
-    try {
-      await api.tna.createRequest({
-        title: requestForm.title,
-        reason: requestForm.reason,
-        desired_outcome: requestForm.desired_outcome,
-        estimated_cost: parseFloat(requestForm.estimated_cost) || 0,
-      });
-
-      setRequestSuccess(true);
-      setRequestForm({ title: '', reason: '', desired_outcome: '', estimated_cost: '' });
-
-      // Refresh requests list
-      const updatedRequests = await api.tna.getRequests().catch(() => []);
-      setMyRequests(updatedRequests);
-
-      setTimeout(() => {
-        setIsRequestModalOpen(false);
-        setRequestSuccess(false);
-      }, 1500);
-    } catch (err) {
-      setRequestError(err.message || 'Failed to submit training request.');
-    } finally {
-      setSubmittingRequest(false);
-    }
-  };
 
   // Check roles
   const userRoles = user?.roles?.map(r => r.role_name) || [];
@@ -199,7 +166,8 @@ const HomePage = () => {
   const isHR = userRoles.includes('HR_MANAGER');
   const isDeptHead = userRoles.includes('DEPT_HEAD');
   const isFinance = userRoles.includes('FINANCE');
-  const hasElevatedAccess = isAdmin || isHR || isDeptHead || isFinance;
+  const isDirector = userRoles.includes('DIRECTOR');
+  const hasElevatedAccess = isAdmin;
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -238,7 +206,7 @@ const HomePage = () => {
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
       {/* Top Professional Header */}
       <header className="bg-[#264033] text-white border-b border-[#1c3026] sticky top-0 z-30 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className=" px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-9 h-9 bg-white text-[#264033] rounded-xl flex items-center justify-center font-black text-base shadow-sm">
               N
@@ -296,7 +264,7 @@ const HomePage = () => {
       </header>
 
       {/* Main Workspace Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="flex-1 w-full  px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Welcome Hero Banner */}
         <div className="bg-gradient-to-r from-[#264033] via-[#2f4f3f] to-[#1f352a] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
           <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
@@ -307,7 +275,7 @@ const HomePage = () => {
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>NIC Competency & Career Growth Portal</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
+              <h1 style={{ color: "whitesmoke" }} className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white">
                 {t.welcomeBack}, {user?.first_name || user?.username}!
               </h1>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-emerald-100/90 font-medium">
@@ -491,18 +459,18 @@ const HomePage = () => {
             {[
               { id: 'overview', label: t.tabOverview, icon: Layers },
               { id: 'requests', label: t.tabRequests, icon: FileText },
+              (isDirector || isDeptHead) && { id: 'requests-approval', label: t.tabRequestsApproval, icon: MessageSquare },
               { id: 'competencies', label: t.tabCompetencies, icon: TrendingUp },
               { id: 'enrollments', label: t.tabEnrollments, icon: BookOpen },
               { id: 'compliance', label: t.tabCompliance, icon: Award },
-            ].map(tab => (
+            ].filter(Boolean).map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 py-3 px-4 font-bold text-xs uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'border-[#264033] text-[#264033] bg-emerald-50/50 rounded-t-xl'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60 rounded-t-xl'
-                }`}
+                className={`flex items-center gap-2 py-3 px-4 font-bold text-xs uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${activeTab === tab.id
+                  ? 'border-[#264033] text-[#264033] bg-emerald-50/50 rounded-t-xl'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60 rounded-t-xl'
+                  }`}
               >
                 <tab.icon className="w-4 h-4" />
                 {tab.label}
@@ -550,7 +518,7 @@ const HomePage = () => {
                           </span>
                           <button
                             onClick={() => {
-                              setRequestForm({
+                              setRequestInitialData({
                                 title: `Training Request: ${prog.title}`,
                                 reason: `Professional skill advancement through ${prog.title}`,
                                 desired_outcome: 'Enhance operational capability and close competency gap.',
@@ -677,69 +645,17 @@ const HomePage = () => {
             </div>
           )}
 
-          {/* TAB 2: MY TRAINING REQUESTS (UC-01) */}
+          {/* TAB 2: MY TRAINING REQUESTS */}
           {activeTab === 'requests' && (
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">My Training Request Log</h3>
-                  <p className="text-xs text-slate-500 mt-1">Track request progress through department approval, budget check, and scheduling.</p>
-                </div>
-                <button
-                  onClick={() => setIsRequestModalOpen(true)}
-                  className="bg-[#264033] hover:bg-[#1a2d24] text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm"
-                >
-                  <Plus className="w-4 h-4" /> Create Request
-                </button>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
-                    <tr>
-                      <th className="px-5 py-3.5">Training Title</th>
-                      <th className="px-5 py-3.5">Estimated Cost</th>
-                      <th className="px-5 py-3.5">Current Approver</th>
-                      <th className="px-5 py-3.5">Status</th>
-                      <th className="px-5 py-3.5">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {myRequests.length > 0 ? (
-                      myRequests.map((req) => (
-                        <tr key={req.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-5 py-4">
-                            <p className="text-sm font-bold text-slate-900">{req.title}</p>
-                            <p className="text-xs text-slate-500 line-clamp-1">{req.reason}</p>
-                          </td>
-                          <td className="px-5 py-4 text-sm font-semibold text-slate-700">
-                            {Number(req.estimated_cost || 0).toLocaleString()} TZS
-                          </td>
-                          <td className="px-5 py-4 text-xs font-medium text-slate-600">
-                            {req.current_approver_name || 'Completed / None'}
-                          </td>
-                          <td className="px-5 py-4">
-                            {getStatusBadge(req.status)}
-                          </td>
-                          <td className="px-5 py-4 text-xs text-slate-400 font-mono">
-                            {req.created_at ? new Date(req.created_at).toLocaleDateString() : 'Recent'}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="5" className="text-center py-12 text-slate-400 text-sm">
-                          No training requests submitted yet. Click "Create Request" above to submit one.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <TrainingRequests />
+            // <RequestApprovalQueue />
           )}
 
-          {/* TAB 3: COMPETENCY & GAP ANALYSIS (UC-02) */}
+          {activeTab === 'requests-approval' && (isDeptHead || isDirector) && (
+            <RequestApprovalQueue />
+          )}
+
+          {/* TAB 3: COMPETENCY & GAP ANALYSIS  */}
           {activeTab === 'competencies' && (
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
               <div>
@@ -866,7 +782,7 @@ const HomePage = () => {
                       </div>
                       <button
                         onClick={() => {
-                          setRequestForm({
+                          setRequestInitialData({
                             title: `Renewal: ${cert.name}`,
                             reason: 'Mandatory certification renewal required for compliance standing.',
                             desired_outcome: 'Maintain continuous regulatory compliance accreditation.',
@@ -888,117 +804,13 @@ const HomePage = () => {
       </main>
 
       {/* Modal: Submit New Training Request (UC-01) */}
-      {isRequestModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-top-6 duration-200">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-[#264033] text-white rounded-xl">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">{t.submitNewRequest}</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Submit proposal to your supervisor and HR for approval</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsRequestModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-full transition-all"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {requestSuccess && (
-              <div className="mx-6 mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600" />
-                <span>Training request submitted successfully! Routed to supervisor.</span>
-              </div>
-            )}
-
-            {requestError && (
-              <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-xs font-semibold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-red-600" />
-                <span>{requestError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreateRequest} className="p-6 space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  Training Title / Course Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Advanced Actuarial Risk Modeling & Pricing"
-                  value={requestForm.title}
-                  onChange={(e) => setRequestForm({ ...requestForm, title: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-[#264033] outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  Justification & Skill Need (Reason)
-                </label>
-                <textarea
-                  required
-                  rows="3"
-                  placeholder="Explain why this training is needed and what competency gap it addresses..."
-                  value={requestForm.reason}
-                  onChange={(e) => setRequestForm({ ...requestForm, reason: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-[#264033] outline-none"
-                ></textarea>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  Desired Outcome / Return on Investment
-                </label>
-                <textarea
-                  rows="2"
-                  placeholder="Describe measurable improvement on your day-to-day output..."
-                  value={requestForm.desired_outcome}
-                  onChange={(e) => setRequestForm({ ...requestForm, desired_outcome: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-[#264033] outline-none"
-                ></textarea>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  Estimated Cost (TZS)
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g. 750000"
-                  value={requestForm.estimated_cost}
-                  onChange={(e) => setRequestForm({ ...requestForm, estimated_cost: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-[#264033] outline-none font-mono"
-                />
-              </div>
-
-              <div className="pt-4 flex gap-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsRequestModalOpen(false)}
-                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingRequest}
-                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-[#264033] hover:bg-[#1a2d24] rounded-xl transition-all shadow-md shadow-[#264033]/20 disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {submittingRequest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  Submit Proposal
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <TrainingRequestForm
+        isOpen={isRequestModalOpen}
+        onClose={() => setIsRequestModalOpen(false)}
+        initialData={requestInitialData}
+        translations={t}
+        onSuccess={() => loadUserAndData()}
+      />
     </div>
   );
 };

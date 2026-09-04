@@ -410,13 +410,12 @@ const StaffManagement = () => {
                       <p className="text-sm text-slate-700">{s.supervisor_name || 'None'}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full ${
-                        s.status === 'ACTIVE'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : s.status === 'ON_LEAVE'
+                      <span className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full ${s.status === 'ACTIVE'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : s.status === 'ON_LEAVE'
                           ? 'bg-amber-100 text-amber-800'
                           : 'bg-slate-100 text-slate-600'
-                      }`}>
+                        }`}>
                         {s.status || 'ACTIVE'}
                       </span>
                     </td>
@@ -695,11 +694,10 @@ const StaffManagement = () => {
                           type="button"
                           key={r.id || r.role_name}
                           onClick={() => handleRoleToggle(r.role_name)}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold text-left border transition-all flex items-center justify-between ${
-                            isChecked
-                              ? 'bg-[#264033] text-white border-[#264033] shadow-sm'
-                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
-                          }`}
+                          className={`px-3 py-2 rounded-xl text-xs font-bold text-left border transition-all flex items-center justify-between ${isChecked
+                            ? 'bg-[#264033] text-white border-[#264033] shadow-sm'
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                            }`}
                         >
                           <span>{r.role_name}</span>
                           {isChecked && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}

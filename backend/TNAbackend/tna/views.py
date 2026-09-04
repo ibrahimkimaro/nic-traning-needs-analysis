@@ -12,6 +12,8 @@ from accounts.models import User, Role, Department
 from competencies.models import PositionCompetency
 from assessments.models import AssessmentResult
 from training.models import TrainingProgram, TrainingCompetency
+from ai.services import ingest_attachment
+from ai.services import generate_grounded_answer, retrieve_knowledge
 
 class IsRequestOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -23,15 +25,29 @@ class TrainingRequestListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        # Admin/HR see all
-        if user.is_superuser or user.is_staff or user.roles.filter(role_name__in=['ADMIN', 'HR_MANAGER']).exists():
+        attachment  = Attachment
+        # Admin see all
+        if user.is_superuser or user.is_staff or user.roles.filter(role_name__in=['ADMIN']).exists():
             return TrainingRequest.objects.all()
+        
+        # MD or director see the trainig req after approved by head of department 
+        if user.roles.filter(role_name__in=['DIRECTOR','ADMIN']).exists():
+            return TrainingRequest.objects.filter(status="DEPARTMENT_APPROVED")
 
         # Supervisors see their team's requests
         if user.roles.filter(role_name='DEPT_HEAD').exists():
-            return TrainingRequest.objects.filter(employee__supervisor=user)
+            return TrainingRequest.objects.filter(employee__supervisor=user,attachments__isnull=False)
 
         return TrainingRequest.objects.filter(employee=user)
+
+class MyTrainingRequestsView(generics.ListAPIView):
+    serializer_class = TrainingRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return TrainingRequest.objects.filter(employee=user)
+
 
 class TrainingRequestDetailView(generics.RetrieveAPIView):
     serializer_class = TrainingRequestSerializer
@@ -104,6 +120,19 @@ class TrainingRequestApprovalView(APIView):
                 # Update Status
                 if action == 'APPROVED':
                     if training_request.status == 'PENDING_DEPT':
+                        Attachment.objects.filter(request=training_request).update(approval_status='APPROVED')
+                        for attachment in training_request.attachments.select_related('knowledge_document').all():
+                            document = getattr(attachment, 'knowledge_document', None)
+                            if document:
+                                document.approval_status = 'APPROVED'
+                                document.save(update_fields=['approval_status', 'updated_at'])
+                        summary_query = (
+                            f'Summarize this training request, its business reason, desired outcome, '
+                            f'and supporting quotation/training documents: {training_request.title}. '
+                            f'{training_request.reason} {training_request.desired_outcome or ""}'
+                        )
+                        summary_chunks = retrieve_knowledge(request.user, summary_query, training_request.id, limit=8)
+                        summary = generate_grounded_answer(request.user, summary_query, summary_chunks, training_request.id)
                         if training_request.estimated_cost > 500000:
                             training_request.status = 'PENDING_BUDGET'
                             training_request.current_approver = User.objects.filter(roles__role_name='FINANCE').first()
@@ -126,7 +155,12 @@ class TrainingRequestApprovalView(APIView):
                     training_request.current_approver = None
 
                 training_request.save()
-                return Response({"status": "success", "new_status": training_request.status}, status=status.HTTP_200_OK)
+                response_data = {"status": "success", "new_status": training_request.status}
+                if action == 'APPROVED' and training_request.status in {'PENDING_BUDGET', 'HR_REVIEW'}:
+                    response_data['summary'] = summary.answer
+                    response_data['summary_status'] = summary.status
+                    response_data['summary_citations'] = summary.citations
+                return Response(response_data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -142,7 +176,13 @@ class TrainingRequestAttachmentView(generics.CreateAPIView):
         if training_request.employee != self.request.user and not self.request.user.is_superuser:
             raise permissions.PermissionDenied("Only the requesting employee can add attachments.")
 
-        serializer.save(request=training_request)
+        serializer.save(
+            request=training_request,
+            uploaded_by=self.request.user,
+            file_name=serializer.validated_data['file'].name,
+            file_type=serializer.validated_data['file'].content_type or '',
+        )
+        ingest_attachment(serializer.instance)
 
 # --- TNA ANALYSIS ENGINE ---
 

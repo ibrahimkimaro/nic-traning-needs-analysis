@@ -5,3 +5,5 @@ psycopg[binary]==3.3.4
 # For asynchronous tasks
 celery==5.4.0
 redis==5.0.8
+pypdf>=5,<7
+pgvector>=0.3,<1

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, MoreVertical, X, CheckCircle2, AlertCircle } from 'lucide-react';
 
-const OrganizationBase = ({ title, subtitle, apiEndpoint, saveFn, Table, Form }) => {
+const OrganizationBase = ({ title, subtitle, apiEndpoint, saveFn, createFn, Table, Form, itemRender }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,7 +51,10 @@ const OrganizationBase = ({ title, subtitle, apiEndpoint, saveFn, Table, Form })
     setModalSuccess(false);
 
     try {
-      await saveFn(formData, editingItem);
+      const submittedData = itemRender
+        ? Object.fromEntries(new FormData(e.currentTarget).entries())
+        : formData;
+      await (itemRender ? createFn(submittedData) : saveFn(submittedData, editingItem));
       setModalSuccess(true);
       await fetchData();
       setTimeout(() => {
@@ -123,13 +126,37 @@ const OrganizationBase = ({ title, subtitle, apiEndpoint, saveFn, Table, Form })
           />
         </div>
       </div>
-
+      {itemRender ? (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-slate-50/80 text-slate-500 text-[11px] uppercase tracking-widest font-bold">
+                <tr>
+                  {itemRender('header')}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredData.length > 0 ? filteredData.map((item, index) => (
+                  <tr key={item.id || index} className="hover:bg-slate-50/80 transition-colors">
+                    {itemRender('row', item)}
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan="10" className="px-6 py-12 text-center text-slate-500">No records found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <Table
           data={filteredData}
           onEdit={handleOpenModal}
         />
       </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-300">
@@ -161,10 +188,12 @@ const OrganizationBase = ({ title, subtitle, apiEndpoint, saveFn, Table, Form })
               )}
 
               <div className="grid grid-cols-1 gap-4">
-                <Form
-                  formData={formData}
-                  handleInputChange={handleInputChange}
-                />
+                {itemRender ? itemRender('form', formData) : (
+                  <Form
+                    formData={formData}
+                    handleInputChange={handleInputChange}
+                  />
+                )}
               </div>
 
               <div className="pt-4 flex gap-3">

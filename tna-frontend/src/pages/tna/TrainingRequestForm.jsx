@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Send, FileText, AlertCircle, CheckCircle2, Loader2, X, Calendar, MapPin } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Send, FileText, AlertCircle, CheckCircle2, Loader2, X, Calendar, MapPin, Users } from 'lucide-react';
 import { api } from '../../auth/api';
 
 /**
@@ -25,6 +25,9 @@ const TrainingRequestForm = ({
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
+  const [participantCandidates, setParticipantCandidates] = useState([]);
+  const [participants, setParticipants] = useState([]);
+  const [participantSearch, setParticipantSearch] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     reason: '',
@@ -49,11 +52,34 @@ const TrainingRequestForm = ({
       });
       setSuccess(false);
       setError(null);
+      setParticipants([]);
+      setParticipantSearch('');
+      api.tna.getParticipantCandidates().then(setParticipantCandidates).catch(() => setParticipantCandidates([]));
     }
   }, [isOpen]);
 
   const set = (field) => (e) =>
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const selectedParticipants = participantCandidates.filter((candidate) => participants.includes(candidate.id));
+  const matchingParticipants = participantCandidates
+    .filter((candidate) => !participants.includes(candidate.id))
+    .filter((candidate) => {
+      const search = participantSearch.trim().toLowerCase();
+      if (!search) return false;
+      const name = candidate.full_name || `${candidate.first_name} ${candidate.last_name}`;
+      return `${name} ${candidate.employee_number || ''}`.toLowerCase().includes(search);
+    })
+    .slice(0, 8);
+
+  const addParticipant = (candidate) => {
+    setParticipants((selected) => [...selected, candidate.id]);
+    setParticipantSearch('');
+  };
+
+  const removeParticipant = (candidateId) => {
+    setParticipants((selected) => selected.filter((id) => id !== candidateId));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,7 +87,7 @@ const TrainingRequestForm = ({
     setError(null);
     try {
       await console.log("data", formData)
-      await api.tna.createRequest(formData);
+      await api.tna.createRequest({ ...formData, participants });
       setSuccess(true);
       if (onSuccess) onSuccess();
       setTimeout(() => {
@@ -222,6 +248,61 @@ const TrainingRequestForm = ({
               onChange={set('training_place')}
               className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-[#264033] outline-none transition-all"
             />
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-slate-600">
+              <Users className="h-3.5 w-3.5" /> Training participants
+            </label>
+            <p className="text-xs text-slate-500">Select employees who should track this request and comment on it.</p>
+            <div className="relative">
+              <Users className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <input
+                type="search"
+                value={participantSearch}
+                onChange={(event) => setParticipantSearch(event.target.value)}
+                placeholder="Search by first name, last name, or employee number"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-[#264033] focus:ring-2 focus:ring-emerald-100"
+              />
+              {participantSearch.trim() && (
+                <div className="absolute left-0 right-0 top-full z-10 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                  {matchingParticipants.length > 0 ? matchingParticipants.map((candidate) => {
+                    const name = candidate.full_name || `${candidate.first_name} ${candidate.last_name}`;
+                    return (
+                      <button
+                        key={candidate.id}
+                        type="button"
+                        onClick={() => addParticipant(candidate)}
+                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-emerald-50"
+                      >
+                        <span className="text-sm font-semibold text-slate-800">{name}</span>
+                        {candidate.employee_number && <span className="text-xs text-slate-400">{candidate.employee_number}</span>}
+                      </button>
+                    );
+                  }) : (
+                    <p className="px-4 py-3 text-sm text-slate-500">No employees found.</p>
+                  )}
+                </div>
+              )}
+            </div>
+            {selectedParticipants.length > 0 ? (
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Selected participants</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedParticipants.map((candidate) => (
+                    <span key={candidate.id} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 py-1.5 pl-3 pr-1.5 text-xs font-semibold text-emerald-900">
+                      {candidate.full_name || `${candidate.first_name} ${candidate.last_name}`}
+                      <button type="button" onClick={() => removeParticipant(candidate.id)} className="rounded-full p-0.5 text-emerald-700 hover:bg-emerald-200" aria-label={`Remove ${candidate.full_name || candidate.first_name}`}>
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="rounded-xl border border-dashed border-slate-300 px-3 py-3 text-xs text-slate-500">No participants selected yet.</p>
+            )}
+            <p className="text-[11px] text-slate-400">Participants can view and comment. Only the creator and authorized approvers can change the request.</p>
           </div>
 
           {/* Actions */}

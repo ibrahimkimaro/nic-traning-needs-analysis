@@ -1,10 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../../auth/api';
 import {
-    LayoutDashboard, FileText, CheckCircle2, AlertCircle, Clock, Award,
-    BookOpen, Plus, Search, ChevronRight, User, Shield, ArrowUpRight,
-    TrendingUp, Calendar, AlertTriangle, Layers, Bell, LogOut, Globe,
-    Briefcase, Building2, Check, Sparkles, Send, Paperclip, X, Loader2
+    CheckCircle2, AlertCircle, Clock, Plus, AlertTriangle, X, Loader2, MessageSquare, Users
 } from 'lucide-react';
 import TrainingRequestForm from './TrainingRequestForm';
 import { translations } from '../HomePage';
@@ -12,31 +9,35 @@ import { translations } from '../HomePage';
 const TrainingRequests = () => {
 
     const [myRequests, setMyRequests] = useState([]);
-    const [lang, setLang] = useState('en');
     const [loading, setLoading] = useState(true);
-    const t = translations[lang] || translations.en;
-    const [isedit, setIsEdit] = useState(false)
     const [selectedRequestId, setSelectedRequestId] = useState(null);
 
 
     // Modal State for New Training Request
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
-    const [requestInitialData, setRequestInitialData] = useState({});
     const [showAttachmentModal, setShowAttachmentModal] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [attachmentType, setAttachmentType] = useState('TRAINING_DOCUMENT');
     const [uploadingAttachment, setUploadingAttachment] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const [comment, setComment] = useState('');
+    const [submittingComment, setSubmittingComment] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [learning, setLearning] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
+    const t = translations.en;
 
 
 
     const loadMyrequests = async () => {
         setLoading(true);
         try {
-            const response = await api.tna.getMyRequests();
-            // console.log(response)
+            const [response, notificationResponse] = await Promise.all([
+                api.tna.getMyRequests(),
+                api.notifications.getMine().catch(() => []),
+            ]);
             setMyRequests(response || []);
-            setRequestInitialData(response)
-            console.log("my requests data", response)
+            setNotifications(notificationResponse || []);
         } catch (error) {
             console.error('Error fetching my requests:', error);
         } finally {
@@ -45,8 +46,31 @@ const TrainingRequests = () => {
     }
 
     useEffect(() => {
-        loadMyrequests();
+        const loadInitialRequests = async () => {
+            const [userResponse] = await Promise.all([
+                api.auth.me().catch(() => null),
+                loadMyrequests(),
+            ]);
+            setCurrentUser(userResponse);
+        };
+        loadInitialRequests();
     }, []);
+
+    useEffect(() => {
+        if (!selectedRequest) return;
+        api.tna.getRequestLearning(selectedRequest.id)
+            .then(setLearning)
+            .catch(() => setLearning(null));
+    }, [selectedRequest]);
+
+    if (loading) {
+        return (
+            <div className="flex min-h-64 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[#264033]" />
+            </div>
+        );
+    }
+
     const getStatusBadge = (status) => {
         switch (status) {
             case 'ATTACHMENT_WAIT':
@@ -70,7 +94,19 @@ const TrainingRequests = () => {
 
     return (
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+        <div className="bg- p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+            {notifications.length > 0 && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                    <div className="flex items-center gap-2 text-sm font-bold text-emerald-900">
+                        <MessageSquare className="h-4 w-4" /> Notifications
+                    </div>
+                    <div className="mt-2 space-y-1">
+                        {notifications.slice(0, 3).map((notification) => (
+                            <p key={notification.id} className="text-xs leading-5 text-emerald-800">{notification.message}</p>
+                        ))}
+                    </div>
+                </div>
+            )}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h3 className="text-xl font-bold text-slate-900">My Training Request Log</h3>
@@ -99,13 +135,18 @@ const TrainingRequests = () => {
                     <tbody className="divide-y divide-slate-100">
                         {myRequests.length > 0 ? (
                             myRequests.map((req) => (
-                                <tr key={req.id} className="hover:bg-slate-50 transition-colors"
-                                // onClick={() => { setRequestInitialData(req), setIsRequestModalOpen(true) }}
-                                >
+                                <tr key={req.id} className="hover:bg-slate-50 transition-colors">
 
                                     <td className="px-5 py-4">
                                         <p className="text-sm font-bold text-slate-900">{req.title}</p>
                                         <p className="text-xs text-slate-500 line-clamp-1">{req.reason}</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedRequest(req)}
+                                            className="mt-2 text-xs font-bold text-[#264033] hover:underline"
+                                        >
+                                            View tracking and comments
+                                        </button>
                                     </td>
                                     <td className="px-5 py-4 text-sm font-semibold text-slate-700">
                                         {Number(req.estimated_cost || 0).toLocaleString()} TZS
@@ -121,7 +162,7 @@ const TrainingRequests = () => {
                                     </td>
 
                                     <td className="px-5 py-4 text-xs text-slate-400 font-mono">
-                                        <button onClick={
+                                        {currentUser?.id && String(req.employee) === String(currentUser.id) && <button onClick={
                                             () => {
                                                 setSelectedRequestId(req.id);
                                                 setSelectedFile(null);
@@ -131,7 +172,7 @@ const TrainingRequests = () => {
                                         } className='bg-[#264033] hover:bg-[#1a2d24] text-white px-1 py-1 rounded text-xs font-bold flex items-center gap-1' >
                                             add
                                             attachment
-                                        </button>
+                                        </button>}
                                     </td>
                                 </tr>
                             ))
@@ -145,6 +186,66 @@ const TrainingRequests = () => {
                     </tbody>
                 </table>
             </div>
+            {selectedRequest && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" role="dialog" aria-modal="true">
+                    <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+                        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4">
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">Request tracking</p>
+                                <h2 className="mt-1 text-lg font-bold text-slate-900">{selectedRequest.title}</h2>
+                            </div>
+                            <button type="button" onClick={() => setSelectedRequest(null)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-200" aria-label="Close request tracking">
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5">
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                <div className="rounded-xl bg-slate-50 p-3"><p className="text-[10px] uppercase text-slate-400">Status</p><div className="mt-2">{getStatusBadge(selectedRequest.status)}</div></div>
+                                <div className="rounded-xl bg-slate-50 p-3"><p className="text-[10px] uppercase text-slate-400">Created</p><p className="mt-2 text-sm font-semibold text-slate-700">{new Date(selectedRequest.created_at).toLocaleDateString()}</p></div>
+                                <div className="rounded-xl bg-slate-50 p-3"><p className="text-[10px] uppercase text-slate-400">Approver</p><p className="mt-2 text-sm font-semibold text-slate-700">{selectedRequest.current_approver_name || 'Completed'}</p></div>
+                                <div className="rounded-xl bg-slate-50 p-3"><p className="text-[10px] uppercase text-slate-400">Participants</p><p className="mt-2 text-sm font-semibold text-slate-700">{selectedRequest.participant_names?.length || 0}</p></div>
+                            </div>
+                            <div className="space-y-2"><h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Request details</h3><p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{selectedRequest.reason}</p>{selectedRequest.desired_outcome && <p className="text-sm leading-6 text-slate-600"><strong>Desired outcome:</strong> {selectedRequest.desired_outcome}</p>}</div>
+                            <div className="space-y-2"><h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400"><Users className="h-4 w-4" /> Participants</h3><p className="text-sm text-slate-600">{selectedRequest.participant_names?.length ? selectedRequest.participant_names.join(', ') : 'No additional participants.'}</p></div>
+                            {learning?.overview && (
+                                <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                                    <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-800">Learning overview</h3>
+                                    <p className="whitespace-pre-wrap text-sm leading-6 text-emerald-950">{learning.overview}</p>
+                                    {learning.daily_question && (
+                                        <div className="mt-3 border-t border-emerald-200 pt-3">
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">Today&apos;s question</p>
+                                            <p className="mt-1 text-sm font-semibold text-emerald-950">{learning.daily_question.question}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            <div className="space-y-3">
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Participant responses</h3>
+                                {selectedRequest.participant_responses?.length ? selectedRequest.participant_responses.map((participantResponse) => (
+                                    <div key={participantResponse.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-3">
+                                        <div>
+                                            <p className="text-sm font-semibold text-slate-800">{participantResponse.participant_name}</p>
+                                            <p className="text-xs text-slate-500">Response: {participantResponse.response}</p>
+                                        </div>
+                                        {currentUser?.id && String(participantResponse.participant) === String(currentUser.id) && participantResponse.response === 'PENDING' && (
+                                            <div className="flex gap-2">
+                                                <button type="button" onClick={async () => { const updated = await api.tna.respondToRequest(selectedRequest.id, 'REJECTED'); setSelectedRequest({ ...selectedRequest, participant_responses: selectedRequest.participant_responses.map((item) => item.id === updated.id ? updated : item) }); }} className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50">Reject</button>
+                                                <button type="button" onClick={async () => { const updated = await api.tna.respondToRequest(selectedRequest.id, 'ACCEPTED'); setSelectedRequest({ ...selectedRequest, participant_responses: selectedRequest.participant_responses.map((item) => item.id === updated.id ? updated : item) }); }} className="rounded-lg bg-[#264033] px-2.5 py-1.5 text-xs font-bold text-white hover:bg-[#1a2d24]">Accept</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )) : <p className="text-sm text-slate-500">No participants were assigned.</p>}
+                            </div>
+                            <div className="space-y-3"><h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400"><MessageSquare className="h-4 w-4" /> Comments</h3>{selectedRequest.comments?.length ? selectedRequest.comments.map((item) => <div key={item.id} className="rounded-xl border border-slate-200 p-3"><p className="text-xs font-bold text-slate-800">{item.author_name}</p><p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{item.body}</p><p className="mt-2 text-[10px] text-slate-400">{new Date(item.created_at).toLocaleString()}</p></div>) : <p className="text-sm text-slate-500">No comments yet.</p>}</div>
+                            <form onSubmit={async (event) => { event.preventDefault(); if (!comment.trim()) return; setSubmittingComment(true); try { const created = await api.tna.addRequestComment(selectedRequest.id, comment.trim()); setSelectedRequest({ ...selectedRequest, comments: [...(selectedRequest.comments || []), created] }); setComment(''); } finally { setSubmittingComment(false); } }} className="space-y-2 border-t border-slate-100 pt-4">
+                                <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Add comment</label>
+                                <textarea value={comment} onChange={(event) => setComment(event.target.value)} rows="3" placeholder="Share information about this training request..." className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm outline-none focus:ring-2 focus:ring-[#264033]" />
+                                <button type="submit" disabled={!comment.trim() || submittingComment} className="rounded-xl bg-[#264033] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">{submittingComment ? 'Posting...' : 'Post comment'}</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
             {showAttachmentModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
@@ -322,9 +423,9 @@ const TrainingRequests = () => {
             <TrainingRequestForm
                 isOpen={isRequestModalOpen}
                 onClose={() => setIsRequestModalOpen(false)}
-                initialData={requestInitialData}
+                initialData={{}}
                 translations={t}
-                onSuccess={() => loadUserAndData()}
+                onSuccess={() => loadMyrequests()}
             />
 
         </div>

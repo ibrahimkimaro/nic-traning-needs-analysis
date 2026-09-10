@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   CheckCircle, XCircle, MessageSquare, ChevronDown,
-  FileText, X, Send,
-  Loader2, Search, Filter, ArrowLeft
+  FileText, X, Send, ExternalLink, Paperclip,
+  Loader2, Search, Filter
 } from 'lucide-react';
 import { api } from '../../auth/api';
 
@@ -16,10 +16,6 @@ const RequestApprovalQueue = () => {
   const [approvalAction, setApprovalAction] = useState({ action: '', comments: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [approvalSummary, setApprovalSummary] = useState(null);
-
-  useEffect(() => {
-    fetchRequests();
-  }, []);
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -54,6 +50,13 @@ const RequestApprovalQueue = () => {
     }
   };
 
+  useEffect(() => {
+    const loadInitialRequests = async () => {
+      await fetchRequests();
+    };
+    loadInitialRequests();
+  }, []);
+
   const filteredRequests = requests.filter(req => {
     const matchesSearch = (req.title + (req.employee?.full_name || '')).toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = selectedStatus === 'All' || req.status === selectedStatus;
@@ -68,6 +71,12 @@ const RequestApprovalQueue = () => {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          {error}
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Approval Queue</h1>
@@ -98,10 +107,8 @@ const RequestApprovalQueue = () => {
             onChange={(e) => setSelectedStatus(e.target.value)}
           >
             <option value="All">All Statuses</option>
-            <option value="SUBMITTED">Submitted</option>
             <option value="PENDING_DEPT">Pending Dept</option>
-            <option value="PENDING_BUDGET">Pending Budget</option>
-            <option value="HR_REVIEW">HR Review</option>
+            <option value="SUBMITTED">Submitted</option>
             <option value="APPROVED">Approved</option>
             <option value="REJECTED">Rejected</option>
           </select>
@@ -111,7 +118,7 @@ const RequestApprovalQueue = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 w-full lg:grid-cols-3 gap-6">
         {approvalSummary && (
           <div className="lg:col-span-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
             <div className="flex items-center gap-2 text-emerald-900">
@@ -124,10 +131,10 @@ const RequestApprovalQueue = () => {
             </p>
           </div>
         )}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="lg:col-span-3  bg-white  rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead className="bg-slate-50/80 text-slate-500 text-[11px] uppercase tracking-widest font-bold">
+              <thead className="bg-slate-50/80 w-full text-slate-500 text-[11px] uppercase tracking-widest font-bold">
                 <tr>
                   <th className="px-6 py-4">Request</th>
                   <th className="px-6 py-4">Employee</th>
@@ -136,7 +143,7 @@ const RequestApprovalQueue = () => {
                   <th className="px-6 py-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y w-full divide-slate-100">
                 {filteredRequests.length > 0 ? (
                   filteredRequests.map((req) => (
                     <tr key={req.id} className={`hover:bg-slate-50/80 transition-colors cursor-pointer ${selectedRequest?.id === req.id ? 'bg-emerald-50/50' : ''}`} onClick={() => setSelectedRequest(req)}>
@@ -172,17 +179,26 @@ const RequestApprovalQueue = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-900">Review Panel</h3>
-            {selectedRequest && (
-              <button onClick={() => setSelectedRequest(null)} className="p-1 text-slate-400 hover:text-slate-600 transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
+        {selectedRequest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="review-dialog-title">
+            <button
+              type="button"
+              aria-label="Close review dialog"
+              className="absolute inset-0 cursor-default"
+              onClick={() => setSelectedRequest(null)}
+            />
+            <div className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+              <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4 sm:px-6">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Request review</p>
+                  <h3 id="review-dialog-title" className="mt-1 text-lg font-bold text-slate-900">Review training request</h3>
+                </div>
+                <button onClick={() => setSelectedRequest(null)} className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-700" aria-label="Close review dialog">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-          <div className="p-6 flex-1">
+              <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
             {!selectedRequest ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-4">
                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-300">
@@ -202,6 +218,20 @@ const RequestApprovalQueue = () => {
                 <div className="space-y-1">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Employee</p>
                   <p className="text-sm font-medium text-slate-700">{selectedRequest.employee_name || 'Unknown'}</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Other participants</p>
+                  {selectedRequest.participant_names?.length ? (
+                    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {selectedRequest.participant_names.map((participantName, index) => (
+                        <li key={`${participantName}-${index}`} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                          {participantName}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-slate-500">No additional participants.</p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Justification</p>
@@ -226,7 +256,45 @@ const RequestApprovalQueue = () => {
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-slate-100 space-y-4">
+                <div className="space-y-3 border-t border-slate-100 pt-5">
+                  <div className="flex items-center justify-between">
+                    <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+                      <Paperclip className="w-4 h-4" /> Supporting documents
+                    </p>
+                    <span className="text-xs text-slate-500">
+                      {selectedRequest.attachments?.length || 0} file{selectedRequest.attachments?.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  {selectedRequest.attachments?.length ? (
+                    <div className="space-y-2">
+                      {selectedRequest.attachments.map((attachment) => (
+                        <div key={attachment.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-800">{attachment.file_name}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {attachment.document_type?.replaceAll('_', ' ')} · {attachment.approval_status}
+                            </p>
+                          </div>
+                          {attachment.file && (
+                            <a
+                              href={attachment.file}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(event) => event.stopPropagation()}
+                              className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-bold text-[#264033] hover:bg-emerald-50"
+                            >
+                              View <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">No supporting document has been uploaded yet.</p>
+                  )}
+                </div>
+
+                <div className="mt-6 border-t border-slate-100 pt-6 space-y-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Decision Comments</label>
                     <textarea
@@ -246,10 +314,10 @@ const RequestApprovalQueue = () => {
                       <XCircle className="w-4 h-4" /> Reject
                     </button>
                     <button
-                      onClick={() => setApprovalAction({ action: 'APPROVED', comments: approvalAction.comments })}
-                      className={`py-2 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${approvalAction.action === 'APPROVED' ? 'bg-emerald-600 text-white ring-2 ring-emerald-200' : 'bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50'}`}
+                      onClick={() => setApprovalAction({ action: 'SUBMITTED', comments: approvalAction.comments })}
+                      className={`py-2 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${approvalAction.action === 'SUBMITTED' ? 'bg-emerald-600 text-white ring-2 ring-emerald-200' : 'bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50'}`}
                     >
-                      <CheckCircle className="w-4 h-4" /> Approve
+                      <CheckCircle className="w-4 h-4" /> Submit
                     </button>
                   </div>
 
@@ -264,8 +332,10 @@ const RequestApprovalQueue = () => {
                 </div>
               </div>
             )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

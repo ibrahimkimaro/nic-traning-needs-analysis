@@ -42,7 +42,6 @@ const Dashboard = () => {
   });
   const [recentUsers, setRecentUsers] = useState([]);
   const [revenueData, setRevenueData] = useState([]);
-  const [demoData, setDemoData] = useState([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -75,7 +74,6 @@ const Dashboard = () => {
         avatar: (emp.first_name || emp.username || 'U').charAt(0).toUpperCase()
       })));
       setRevenueData([45000, 52000, 48000, 61000, 55000, 67000]);
-      setDemoData([40, 30, 20, 10]);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -85,24 +83,24 @@ const Dashboard = () => {
 
   const kpiConfigs = [
     {
-      title: 'Total Budget',
-      value: `$${stats.totalBudget.toLocaleString()}`,
+      title: 'Total Budget Allocated',
+      value: `TZS ${Number(stats.totalBudget || 0).toLocaleString()}`,
       change: '+12.5%',
       trend: 'up',
       icon: DollarSign,
-      color: 'text-emerald-700',
-      bg: 'bg-emerald-50',
-      chartColor: '#264033'
+      color: 'text-emerald-800 dark:text-emerald-300',
+      bg: 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-100 dark:border-emerald-800/40',
+      chartColor: '#10b981'
     },
     {
-      title: 'Total Employees',
+      title: 'Active Employees',
       value: stats.totalEmployees.toLocaleString(),
       change: '+3.2%',
       trend: 'up',
       icon: Users,
-      color: 'text-emerald-700',
-      bg: 'bg-emerald-50',
-      chartColor: '#264033'
+      color: 'text-blue-800 dark:text-blue-300',
+      bg: 'bg-blue-50 dark:bg-blue-950/60 border-blue-100 dark:border-blue-800/40',
+      chartColor: '#3b82f6'
     },
     {
       title: 'Pending Requests',
@@ -110,9 +108,9 @@ const Dashboard = () => {
       change: '-1.4%',
       trend: 'down',
       icon: FileText,
-      color: 'text-amber-600',
-      bg: 'bg-amber-50',
-      chartColor: '#d97706'
+      color: 'text-amber-800 dark:text-amber-300',
+      bg: 'bg-amber-50 dark:bg-amber-950/60 border-amber-100 dark:border-amber-800/40',
+      chartColor: '#f59e0b'
     },
     {
       title: 'Completion Rate',
@@ -120,18 +118,18 @@ const Dashboard = () => {
       change: '+0.8%',
       trend: 'up',
       icon: Percent,
-      color: 'text-emerald-700',
-      bg: 'bg-emerald-50',
-      chartColor: '#264033'
+      color: 'text-purple-800 dark:text-purple-300',
+      bg: 'bg-purple-50 dark:bg-purple-950/60 border-purple-100 dark:border-purple-800/40',
+      chartColor: '#8b5cf6'
     },
   ];
 
   if (loading) {
     return (
-      <div className="h-full w-full flex items-center justify-center">
+      <div className="h-full w-full min-h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#264033] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-500 font-medium">Loading Dashboard Data...</p>
+          <div className="w-10 h-10 border-3 border-emerald-700 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Loading Executive Dashboard Data...</p>
         </div>
       </div>
     );
@@ -139,11 +137,11 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <div className="h-full w-full flex items-center justify-center">
-        <div className="max-w-md w-full bg-white p-8 rounded-2xl border border-red-200 shadow-xl text-center">
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Connection Error</h2>
-          <p className="text-slate-500 mb-6">{error}</p>
-          <button onClick={fetchDashboardData} className="w-full bg-[#264033] text-white py-2 rounded-lg font-medium hover:bg-[#1a2d24] transition-colors">
+      <div className="h-full w-full min-h-[60vh] flex items-center justify-center">
+        <div className="max-w-md w-full bg-white dark:bg-[#13221b] p-8 rounded-3xl border border-rose-200 dark:border-rose-900/60 shadow-xl text-center">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Connection Error</h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{error}</p>
+          <button onClick={fetchDashboardData} className="w-full bg-[#1b3d2f] hover:bg-[#132e23] text-white py-2.5 rounded-xl font-bold transition-all shadow-sm">
             Try Again
           </button>
         </div>
@@ -152,182 +150,192 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div className="space-y-8 w-full">
+      {/* Page Title & Actions */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 w-full">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Operational Overview</h1>
-          <p className="text-slate-500 text-sm mt-1">Real-time performance metrics for the current fiscal quarter.</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
+            Institutional Operational Overview
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
+            Real-time analytics, skill development metrics, and organizational KPIs.
+          </p>
         </div>
-        <button className="bg-[#264033] hover:bg-[#1a2d24] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95">
+        <button className="bg-[#1b3d2f] hover:bg-[#132e23] text-white px-4.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95 shrink-0">
           <Download className="w-4 h-4" />
-          Export Report
+          <span>Export Summary Report</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* KPI Stats Grid - Full Width */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 w-full">
         {kpiConfigs.map((kpi, idx) => (
-          <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 group">
+          <div key={idx} className="bg-white dark:bg-[#13221b] p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-200 group">
             <div className="flex items-start justify-between mb-4">
-              <div className={`p-2.5 ${kpi.bg} ${kpi.color} rounded-xl transition-transform group-hover:scale-110 duration-200`}>
+              <div className={`p-3 ${kpi.bg} ${kpi.color} rounded-2xl border transition-all shadow-xs`}>
                 <kpi.icon className="w-5 h-5" />
               </div>
-              <span className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${kpi.trend === 'up' ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50'
-                }`}>
-                {kpi.trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              <span className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border ${
+                kpi.trend === 'up'
+                  ? 'text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200/60'
+                  : 'text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border-amber-200/60'
+              }`}>
+                {kpi.trend === 'up' ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                 {kpi.change}
               </span>
             </div>
-            <p className="text-sm font-medium text-slate-500">{kpi.title}</p>
-            <h3 className="text-2xl font-bold text-slate-900 mt-1">{kpi.value}</h3>
-            <div className="mt-4 h-12 w-full opacity-60">
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{kpi.title}</p>
+            <h3 className="text-xl sm:text-2xl font-extrabold text-slate-800 dark:text-white mt-1">{kpi.value}</h3>
+            <div className="mt-4 h-10 w-full opacity-60">
               <svg className="w-full h-full" preserveAspectRatio="none">
-                <path d={`M0 30 Q 20 ${idx % 2 === 0 ? 10 : 20}, 40 25 T 80 15 T 120 35 T 160 20 T 200 30 T 240 10 T 280 25`}
-                  fill="none" stroke={kpi.chartColor} strokeWidth="2.5" strokeLinecap="round" />
+                <path
+                  d={`M0 25 Q 25 ${idx % 2 === 0 ? 8 : 18}, 50 20 T 100 12 T 150 28 T 200 16 T 250 22 T 300 10`}
+                  fill="none"
+                  stroke={kpi.chartColor}
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
               </svg>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      {/* Charts Grid - Expanded Full Width */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 w-full">
+        <div className="xl:col-span-2 bg-white dark:bg-[#13221b] p-6 sm:p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="font-bold text-slate-900">Revenue Growth</h3>
-            <select className="text-xs border border-slate-200 rounded-lg bg-slate-50 px-3 py-1.5 outline-none focus:ring-2 focus:ring-[#264033] transition-all">
+            <div>
+              <h3 className="font-bold text-slate-800 dark:text-white text-base">Training Spend & Budget Trajectory</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Quarterly development allocation vs expenditure</p>
+            </div>
+            <select className="text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/80 dark:bg-[#0f1a14] text-slate-700 dark:text-slate-200 px-3.5 py-2 outline-none focus:ring-2 focus:ring-emerald-600/40 transition-all font-semibold">
               <option>Last 6 Months</option>
-              <option>Last Year</option>
+              <option>Full Fiscal Year</option>
             </select>
           </div>
           <div className="h-72 w-full">
-            <Line data={{
-              labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-              datasets: [{
-                label: 'Revenue',
-                data: revenueData,
-                borderColor: '#264033',
-                backgroundColor: 'rgba(38, 64, 51, 0.05)',
-                fill: true,
-                tension: 0.4,
-                borderWidth: 3,
-                pointRadius: 4,
-                pointBackgroundColor: '#fff',
-                pointBorderColor: '#264033',
-                pointBorderWidth: 2
-              }]
-            }} options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: {
-                y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { color: '#64748b', font: { size: 11 } } },
-                x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 11 } } }
-              }
-            }} />
+            <Line
+              data={{
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                  label: 'Training Investment (TZS)',
+                  data: revenueData,
+                  borderColor: '#10b981',
+                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                  fill: true,
+                  tension: 0.4,
+                  borderWidth: 3,
+                  pointRadius: 4,
+                  pointBackgroundColor: '#fff',
+                  pointBorderColor: '#10b981',
+                  pointBorderWidth: 2
+                }]
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                  y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.1)' }, ticks: { color: '#64748b', font: { size: 11 } } },
+                  x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 11 } } }
+                }
+              }}
+            />
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-bold text-slate-900">User Demographics</h3>
-            <button className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-all"><Filter className="w-4 h-4" /></button>
+
+        <div className="bg-white dark:bg-[#13221b] p-6 sm:p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-bold text-slate-800 dark:text-white text-base">Departmental Distribution</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Training participants by sector</p>
+            </div>
+            <button className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
+              <Filter className="w-4 h-4" />
+            </button>
           </div>
-          <div className="h-72 w-full flex items-center justify-center">
-            <Doughnut data={{
-              labels: ['Enterprise', 'SMB', 'Freelance', 'Other'],
-              value: [20, 30, 20, 10],
-              datasets: [{
-                data: [20, 30, 20, 10],
-                backgroundColor: ['#264033', '#4a6b5d', '#8aa396', '#cbd5e1'],
-                borderWidth: 0,
-                hoverOffset: 10
-              }]
-            }} options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              cutout: '75%',
-              plugins: {
-                legend: {
-                  position: 'bottom',
-                  labels: { usePointStyle: true, padding: 20, font: { size: 12, weight: '500' }, color: '#64748b' }
+          <div className="h-64 w-full flex items-center justify-center">
+            <Doughnut
+              data={{
+                labels: ['Underwriting', 'Claims', 'ICT & Systems', 'Finance', 'Legal'],
+                datasets: [{
+                  data: [35, 25, 20, 12, 8],
+                  backgroundColor: ['#1b3d2f', '#2d6a4f', '#40916c', '#74c69d', '#b7e4c7'],
+                  borderWidth: 0,
+                  hoverOffset: 8
+                }]
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '72%',
+                plugins: {
+                  legend: {
+                    position: 'bottom',
+                    labels: { usePointStyle: true, padding: 15, font: { size: 11, weight: '600' }, color: '#64748b' }
+                  }
                 }
-              }
-            }} />
+              }}
+            />
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h3 className="font-bold text-slate-900">Recent Users</h3>
+      {/* Recent Users Table - Full Screen Width */}
+      <div className="bg-white dark:bg-[#13221b] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden w-full">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-slate-800 dark:text-white text-base">Recent Staff Registrations & Activity</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Real-time authentication records and employee profile states</p>
+          </div>
           <div className="flex items-center gap-3">
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                 <Search className="w-4 h-4" />
               </span>
-              <input type="text" placeholder="Filter users..."
-                className="block w-64 pl-10 pr-3 py-1.5 border border-slate-200 rounded-lg bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#264033] transition-all" />
+              <input
+                type="text"
+                placeholder="Filter staff members..."
+                className="block w-64 pl-10 pr-3.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/80 dark:bg-[#0f1a14] text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600/40 transition-all text-slate-800 dark:text-slate-200"
+              />
             </div>
-            <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
-              <Filter className="w-4 h-4" />
-            </button>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 text-slate-500 text-[11px] uppercase tracking-widest font-bold">
-                <th className="px-6 py-4 w-10">
-                  <input type="checkbox" className="rounded border-slate-300 text-[#264033] focus:ring-[#264033]" />
-                </th>
-                <th className="px-6 py-4 cursor-pointer hover:text-slate-700 group">
-                  <div className="flex items-center gap-1">User <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" /></div>
-                </th>
-                <th className="px-6 py-4 cursor-pointer hover:text-slate-700 group">
-                  <div className="flex items-center gap-1">Email <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" /></div>
-                </th>
-                <th className="px-6 py-4 cursor-pointer hover:text-slate-700 group">
-                  <div className="flex items-center gap-1">Role <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" /></div>
-                </th>
-                <th className="px-6 py-4 cursor-pointer hover:text-slate-700 group">
-                  <div className="flex items-center gap-1">Status <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" /></div>
-                </th>
-                <th className="px-6 py-4 cursor-pointer hover:text-slate-700 group text-right">
-                  <div className="flex items-center justify-end gap-1">Last Login <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" /></div>
-                </th>
+              <tr className="bg-slate-50/80 dark:bg-[#0f1a14] text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-widest font-bold border-b border-slate-100 dark:border-slate-800">
+                <th className="px-6 py-4">Employee</th>
+                <th className="px-6 py-4">Corporate Email</th>
+                <th className="px-6 py-4">Designation</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Activity</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {recentUsers.map((user, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/80 transition-colors group">
-                  <td className="px-6 py-4"><input type="checkbox" className="rounded border-slate-300 text-[#264033] focus:ring-[#264033]" /></td>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {recentUsers.map((u, idx) => (
+                <tr key={idx} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.avatar}`} className="w-8 h-8 rounded-full bg-slate-100 ring-2 ring-white shadow-sm" alt="" />
-                      <span className="text-sm font-semibold text-slate-900">{user.name}</span>
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-[#1b3d2f] dark:text-emerald-300 flex items-center justify-center font-bold text-xs">
+                        {u.avatar}
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-white">{u.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{user.email}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{user.role}</td>
+                  <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-300">{u.email}</td>
+                  <td className="px-6 py-4 text-xs font-medium text-slate-600 dark:text-slate-300">{u.role}</td>
                   <td className="px-6 py-4">
-                    <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-md ${user.status === 'Active' ? 'bg-emerald-100 text-emerald-700' :
-                      user.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                      {user.status}
+                    <span className="text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300/40">
+                      {u.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-500 text-right font-medium">{user.lastLogin}</td>
+                  <td className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400 text-right font-medium">{u.lastLogin}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-        <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <p className="text-xs text-slate-500">Showing 1 to {recentUsers.length} of {recentUsers.length} entries</p>
-          <div className="flex gap-1">
-            <button className="p-1 px-3 text-xs border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors disabled:opacity-50" disabled>Previous</button>
-            <button className="p-1 px-3 text-xs border border-slate-200 rounded-lg bg-[#264033] text-white font-semibold shadow-sm">1</button>
-            <button className="p-1 px-3 text-xs border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors">Next</button>
-          </div>
         </div>
       </div>
     </div>

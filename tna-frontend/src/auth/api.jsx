@@ -1,4 +1,5 @@
-const API_BASE_URL = 'http://127.0.0.1:8081/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ||
+  `http://${window.location.hostname}:8081/api/v1`;
 
 export const apiRequest = async (endpoint, method = 'GET', body = null) => {
   const token = localStorage.getItem('accessToken');
@@ -33,6 +34,7 @@ export const apiRequest = async (endpoint, method = 'GET', body = null) => {
         'API request failed';
       throw new Error(errorMsg);
     }
+    if (response.status === 204) return null;
     return await response.json();
   } catch (error) {
     console.error(`API Error [${endpoint}]:`, error);
@@ -83,6 +85,10 @@ export const api = {
     getMyRequests: () => apiRequest('/tna/requests/me/'),
     getRequest: (id) => apiRequest(`/tna/requests/${id}/`),
     createRequest: (data) => apiRequest('/tna/requests/create/', 'POST', data),
+    getParticipantCandidates: (search = '') => apiRequest(`/tna/participants/${search ? `?search=${encodeURIComponent(search)}` : ''}`),
+    addRequestComment: (requestId, body) => apiRequest(`/tna/requests/${requestId}/comments/`, 'POST', { body }),
+    respondToRequest: (requestId, response) => apiRequest(`/tna/requests/${requestId}/participant-response/`, 'POST', { response }),
+    getRequestLearning: (requestId) => apiRequest(`/tna/requests/${requestId}/learning/`),
     uploadAttachment: (requestId, file, documentType) => {
       const formData = new FormData();
       formData.append('file', file);
@@ -120,5 +126,16 @@ export const api = {
     createProvider: (data) => apiRequest('/training/providers/', 'POST', data),
     getEnrollments: () => apiRequest('/training/enrollments/'),
     createEnrollment: (data) => apiRequest('/training/enrollments/', 'POST', data),
+  },
+
+  compliance: {
+    getCertifications: () => apiRequest('/compliance/certifications/'),
+    getRequirements: () => apiRequest('/compliance/requirements/'),
+  },
+
+  notifications: {
+    getMine: () => apiRequest('/notifications/'),
+    markRead: () => apiRequest('/notifications/read/', 'PATCH', {}),
+    clear: () => apiRequest('/notifications/clear/', 'DELETE'),
   },
 };

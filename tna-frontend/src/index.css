@@ -4,7 +4,6 @@
   from {
     opacity: 0;
   }
-
   to {
     opacity: 1;
   }
@@ -12,10 +11,9 @@
 
 @keyframes slideInTop {
   from {
-    transform: translateY(-20px);
+    transform: translateY(-16px);
     opacity: 0;
   }
-
   to {
     transform: translateY(0);
     opacity: 1;
@@ -25,6 +23,7 @@
 .animate-in {
   animation-duration: 300ms;
   animation-fill-mode: forwards;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .fade-in {
@@ -36,18 +35,19 @@
 }
 
 :root {
-  --primary-color: #264033;
-  --primary-hover: #1a2d24;
-  --bg-color: #FFFFFF;
-  --text-primary: #000000;
-  --text-secondary: #4B5563;
-  --border-color: #E5E7EB;
-  --success-color: #16A34A;
-  --danger-color: #DC2626;
-  --warning-color: #D97706;
+  --primary-color: #1b3d2f;
+  --primary-hover: #132e23;
+  --primary-light: #2d6a4f;
+  --bg-color: #f6f8fa;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --success-color: #10b981;
+  --danger-color: #ef4444;
+  --warning-color: #f59e0b;
   --sidebar-width: 260px;
   --header-height: 64px;
-  --transition-speed: 0.3s;
+  --transition-speed: 0.2s;
 }
 
 body {
@@ -56,7 +56,63 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  font-size: small;
+  font-size: 0.875rem;
+}
+
+/* Light Mode Global Refinements - Eye-Comfortable & Balanced */
+body {
+  background-color: #f6f8fa;
+  color: #1e293b;
+}
+
+/* Dark Mode Global Refinements */
+html.dark body {
+  background-color: #0b1410;
+  color: #e5ebe7;
+}
+
+html.dark .bg-white {
+  background-color: #13221b;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/50,
+html.dark .bg-slate-50\/60,
+html.dark .bg-slate-50\/70,
+html.dark .bg-slate-50\/80 {
+  background-color: #0f1a14;
+}
+
+html.dark .bg-slate-100 {
+  background-color: #1a2c23;
+}
+
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: #edf3ef;
+}
+
+html.dark .text-slate-700,
+html.dark .text-slate-600 {
+  color: #c3d0c8;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #9eafa5;
+}
+
+html.dark .border-slate-200,
+html.dark .border-slate-100 {
+  border-color: #24382e;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #111d17;
+  color: #edf3ef;
+  border-color: #2f4337;
 }
 
 h1,
@@ -66,8 +122,8 @@ h4,
 h5,
 h6 {
   font-family: 'Inter', sans-serif;
-  font-weight: 800;
-  color: var(--text-primary);
+  font-weight: 700;
+  color: inherit;
   letter-spacing: -0.02em;
 }
 
@@ -79,4 +135,57 @@ a {
 button {
   cursor: pointer;
   font-family: inherit;
+}
+
+/* Smooth, elegant icon & button interactions without shaking or jitter */
+.icon-action {
+  transition: color 180ms cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.icon-action:hover {
+  color: #10b981;
+  transform: translateY(-1px);
+}
+
+.icon-action:active {
+  transform: translateY(0) scale(0.96);
+}
+
+/* Smooth interactive transitions across buttons and images */
+button, a, input, select, textarea {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 180ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Table and list hover refinements - Reduced white brightness and glare */
+table tbody tr {
+  transition: background-color 150ms ease;
+}
+
+table tbody tr:hover {
+  background-color: rgba(27, 61, 47, 0.04) !important;
+}
+
+html.dark table tbody tr:hover {
+  background-color: rgba(52, 211, 153, 0.06) !important;
+}
+
+.custom-list-item:hover {
+  background-color: rgba(27, 61, 47, 0.04) !important;
+}
+
+html.dark .custom-list-item:hover {
+  background-color: rgba(52, 211, 153, 0.06) !important;
+}
+
+/* Image hover safety: strictly prevent shaking or sudden distortions */
+img {
+  max-width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
 }

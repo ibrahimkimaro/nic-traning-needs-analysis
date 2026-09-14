@@ -8,7 +8,7 @@
   margin-left: var(--sidebar-width);
   display: flex;
   flex-direction: column;
-  background-color: #f9fafb;
+  /* background-color: #f9fafb; */
 }
 
 .page-body {
@@ -22,7 +22,7 @@
   border: 1px solid var(--border-color);
   padding: 2rem;
   min-height: 80vh;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .placeholder-page {

@@ -28,9 +28,9 @@ const KnowledgeAssistant = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)] gap-6">
+    <div className="grid grid-cols-1 bg-white xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)] gap-6">
       <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 bg-[#264033] text-white">
+        <div className="p-6 bg-gradient-to-r from-[#264033] to-[#244f38] text-white">
           <div className="flex items-start gap-3">
             <div className="p-2.5 rounded-xl bg-white/10">
               <Sparkles className="w-5 h-5 text-emerald-200" />
@@ -118,7 +118,7 @@ const KnowledgeAssistant = () => {
         )}
       </section>
 
-      <aside className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-6 h-fit space-y-4">
+      <aside className="rounded-2xl bg-white border border-emerald-100 bg-emerald-50/70 p-6 h-fit space-y-4">
         <div className="flex items-center gap-2 text-[#264033]">
           <BookOpen className="w-5 h-5" />
           <h3 className="font-bold">Approved information</h3>

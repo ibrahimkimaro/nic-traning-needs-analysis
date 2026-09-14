@@ -275,7 +275,7 @@ const HomePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d1a14] flex items-center justify-center">
+      <div className="min-h-screen  bg-[#0d1a14] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="w-16 h-16 rounded-2xl bg-emerald-950/80 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-950/50">
             <img src="/logo/logo-light-streamline.png" alt="NIC" className="h-10 w-10 object-contain animate-pulse" />
@@ -415,7 +415,7 @@ const HomePage = () => {
       </header>
 
       {/* Main Container - Full Screen Expansion */}
-      <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-8 space-y-8">
+      <main className="flex-1 w-full px-4 bg-white  sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-8 space-y-8">
         {/* Modern Curved Hero Banner */}
         <div className="relative rounded-3xl p-6 sm:p-8 md:p-10 text-white shadow-xl overflow-hidden bg-gradient-to-r from-[#142d22] via-[#1b3d2f] to-[#25503e] border border-emerald-800/30 w-full">
           {/* Subtle Ambient Mesh & Decorative Glow */}
@@ -466,11 +466,11 @@ const HomePage = () => {
 
         {/* Privileged Management Command Hub - Expanded Full Width */}
         {hasElevatedAccess && (
-          <div className="space-y-3.5 w-full">
+          <div className="space-y-3.5 w-full ">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
-                <span>Authorized Management Command Hub</span>
+                <span className='dark:text-slate-400'>Authorized Management Command Hub</span>
               </h2>
               <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 px-3 py-0.5 rounded-full border border-emerald-300/40">
                 Privileged Access Active
@@ -494,7 +494,7 @@ const HomePage = () => {
                     <h3 className="text-sm font-bold text-slate-800 dark:text-white group-hover:text-emerald-800 dark:group-hover:text-emerald-300 transition-colors">
                       {t.adminSuiteCard}
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                    <p className="text-xs text-emerald-600 dark:text-slate-400 mt-1 line-clamp-2">
                       {t.adminSuiteDesc}
                     </p>
                   </div>
@@ -624,8 +624,7 @@ const HomePage = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 py-3 px-4.5 font-bold text-xs uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${activeTab === tab.id
                   ? 'border-[#1b3d2f] dark:border-emerald-400 text-[#1b3d2f] dark:text-emerald-300 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-t-xl'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-800/40 rounded-t-xl'
-                  }`}
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-800/40 rounded-t-xl'}`}
               >
                 <tab.icon className="w-4 h-4" />
                 <span>{tab.label}</span>
@@ -809,11 +808,6 @@ const HomePage = () => {
             <RequestApprovalQueue />
           )}
 
-          {/* TAB 3: APPROVED KNOWLEDGE ASSISTANT */}
-          {activeTab === 'assistant' && (
-            <KnowledgeAssistant />
-          )}
-
           {/* TAB 4: COMPETENCY & GAP ANALYSIS */}
           {activeTab === 'competencies' && (
             <div className="bg-white dark:bg-[#13221b] p-6 sm:p-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-6 w-full">
@@ -964,6 +958,11 @@ const HomePage = () => {
                 )}
               </div>
             </div>
+          )}
+
+          {/* TAB 3: APPROVED KNOWLEDGE ASSISTANT */}
+          {activeTab === 'assistant' && (
+            <KnowledgeAssistant />
           )}
         </div>
       </main>

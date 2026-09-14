@@ -15,18 +15,42 @@ const AdminLayout = () => {
   const [isOrgOpen, setIsOrgOpen] = useState(true);
   const [isTnaOpen, setIsTnaOpen] = useState(false);
   const [isTrainingOpen, setIsTrainingOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser] = useState(() => {
+    const stored = localStorage.getItem('user');
+    if (!stored || stored === 'undefined' || stored === 'null') return null;
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return null;
+    }
+  });
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      try {
-        setCurrentUser(JSON.parse(stored));
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    api.notifications.getMine().then(setNotifications).catch(() => setNotifications([]));
   }, []);
+
+  const toggleNotifications = async () => {
+    const nextOpen = !showNotifications;
+    setShowNotifications(nextOpen);
+    if (nextOpen && notifications.some((notification) => !notification.is_read)) {
+      await api.notifications.markRead().catch(() => { });
+      setNotifications((current) => current.map((notification) => ({ ...notification, is_read: true })));
+    }
+  };
+
+  const clearNotifications = async () => {
+    await api.notifications.clear().catch(() => { });
+    setNotifications([]);
+    setShowNotifications(false);
+  };
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   const mainMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
@@ -103,11 +127,10 @@ const AdminLayout = () => {
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
-                location.pathname === item.path
-                  ? 'bg-[#264033] text-white shadow-sm ring-1 ring-[#264033]'
-                  : 'hover:text-white hover:bg-slate-800 text-slate-400'
-              }`}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${location.pathname === item.path
+                ? 'bg-[#264033] text-white shadow-sm ring-1 ring-[#264033]'
+                : 'hover:text-white hover:bg-slate-800 text-slate-400'
+                }`}
             >
               <item.icon className="w-4 h-4" />
               {item.label}
@@ -133,11 +156,10 @@ const AdminLayout = () => {
                   <button
                     key={item.id}
                     onClick={() => navigate(item.path)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 ${
-                      location.pathname === item.path
-                        ? 'text-white font-bold bg-[#264033]'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                    }`}
+                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 ${location.pathname === item.path
+                      ? 'text-white font-bold bg-[#264033]'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      }`}
                   >
                     <item.icon className="w-3.5 h-3.5" />
                     {item.label}
@@ -166,11 +188,10 @@ const AdminLayout = () => {
                   <button
                     key={item.id}
                     onClick={() => navigate(item.path)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 ${
-                      location.pathname === item.path
-                        ? 'text-white font-bold bg-[#264033]'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                    }`}
+                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 ${location.pathname === item.path
+                      ? 'text-white font-bold bg-[#264033]'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      }`}
                   >
                     <item.icon className="w-3.5 h-3.5" />
                     {item.label}
@@ -199,11 +220,10 @@ const AdminLayout = () => {
                   <button
                     key={item.id}
                     onClick={() => navigate(item.path)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 ${
-                      location.pathname === item.path
-                        ? 'text-white font-bold bg-[#264033]'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                    }`}
+                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 ${location.pathname === item.path
+                      ? 'text-white font-bold bg-[#264033]'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      }`}
                   >
                     <item.icon className="w-3.5 h-3.5" />
                     {item.label}
@@ -219,11 +239,10 @@ const AdminLayout = () => {
               <button
                 key={item.id}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
-                  location.pathname === item.path
-                    ? 'bg-[#264033] text-white shadow-sm ring-1 ring-[#264033]'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${location.pathname === item.path
+                  ? 'bg-[#264033] text-white shadow-sm ring-1 ring-[#264033]'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
               >
                 <item.icon className="w-4 h-4" />
                 {item.label}
@@ -238,11 +257,10 @@ const AdminLayout = () => {
               <button
                 key={item.id}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
-                  location.pathname === item.path
-                    ? 'bg-[#264033] text-white shadow-sm ring-1 ring-[#264033]'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${location.pathname === item.path
+                  ? 'bg-[#264033] text-white shadow-sm ring-1 ring-[#264033]'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
               >
                 <item.icon className="w-4 h-4" />
                 {item.label}

@@ -30,7 +30,7 @@ const ProviderManagement = () => {
               <td className="px-6 py-4 text-sm text-slate-600">{item.contact_person || 'N/A'}</td>
               <td className="px-6 py-4 text-sm text-slate-600">{item.email || 'N/A'}</td>
               <td className="px-6 py-4 text-sm font-medium text-amber-600">
-                { '★'.repeat(item.rating || 0) }{ '☆'.repeat(5 - (item.rating || 0)) }
+                {'★'.repeat(item.rating || 0)}{'☆'.repeat(5 - (item.rating || 0))}
               </td>
             </>
           );

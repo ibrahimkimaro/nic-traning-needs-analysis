@@ -16,14 +16,14 @@ import EnrollmentManagement from './pages/training/EnrollmentManagement';
 import BudgetOversight from './pages/BudgetOversight';
 import SystemAdministration from './pages/SystemAdministration';
 import Login from './pages/Login';
+import EnterpriseAnalytics from './pages/enterprise/EnterpriseAnalytics';
+import EnterpriseSettings from './pages/enterprise/EnterpriseSettings';
 import './App.css';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('accessToken');
   if (!token) {
-    console.log("jau sana")
     return <Navigate to="/" replace />;
-
   }
   return children;
 };
@@ -91,9 +91,10 @@ const App = () => {
           {/* System Administration */}
           <Route path="system-admin" element={<SystemAdministration />} />
 
-          <Route path="analytics" element={<div className="p-8 font-medium text-slate-500">Analytics Suite (Under Construction)</div>} />
-          <Route path="settings" element={<div className="p-8 font-medium text-slate-500">Settings Page (Under Construction)</div>} />
-          <Route path="security" element={<div className="p-8 font-medium text-slate-500">Security & RBAC Configuration</div>} />
+          {/* Next-Gen Enterprise Blueprint Routes */}
+          <Route path="analytics" element={<EnterpriseAnalytics />} />
+          <Route path="settings" element={<EnterpriseSettings />} />
+          <Route path="security" element={<SystemAdministration />} />
           <Route path="audit" element={<div className="p-8 font-medium text-slate-500">Audit Logs & Access History</div>} />
         </Route>
 

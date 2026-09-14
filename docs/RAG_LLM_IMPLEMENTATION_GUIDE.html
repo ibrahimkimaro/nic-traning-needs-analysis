@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TNA RAG and LLM Implementation Guide</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  :root { color: #17231d; font-family: Arial, sans-serif; }
+  body { margin: 0; line-height: 1.5; font-size: 10.5pt; }
+  h1 { color: #1f4936; font-size: 25pt; margin: 0 0 6px; }
+  h2 { color: #1f4936; font-size: 16pt; border-bottom: 2px solid #d9e7de; padding-bottom: 4px; margin-top: 24px; }
+  h3 { color: #345843; font-size: 12pt; margin-top: 16px; }
+  p { margin: 6px 0 10px; }
+  .cover { padding: 34mm 0 20mm; border-bottom: 4px solid #2f6a4b; }
+  .subtitle { color: #64756b; font-size: 13pt; }
+  .meta { margin-top: 28px; color: #64756b; }
+  .box { background: #f1f7f3; border-left: 4px solid #2f6a4b; padding: 10px 14px; margin: 12px 0; }
+  .flow { font-family: monospace; background: #f7f8f7; border: 1px solid #dfe7e1; padding: 12px; white-space: pre-wrap; }
+  code { font-family: monospace; background: #f1f3f1; padding: 1px 4px; }
+  pre { background: #f7f8f7; border: 1px solid #dfe7e1; padding: 10px; white-space: pre-wrap; font-size: 9pt; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 14px; }
+  th { background: #1f4936; color: white; text-align: left; }
+  th, td { border: 1px solid #d7e0da; padding: 6px 8px; vertical-align: top; }
+  ul, ol { margin-top: 4px; }
+  li { margin: 3px 0; }
+  .small { color: #64756b; font-size: 9pt; }
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+<section class="cover">
+  <h1>TNA RAG and LLM Implementation Guide</h1>
+  <div class="subtitle">Training Needs Analysis System</div>
+  <p class="meta">Implementation overview, request workflow, security boundaries, APIs, and current limitations<br>Generated: 8 September 2026</p>
+</section>
+
+<h2>1. Executive Summary</h2>
+<p>The system uses Retrieval-Augmented Generation (RAG) to find approved evidence from training documents and uses a local Mistral language model to summarize or explain that evidence.</p>
+<div class="box"><strong>Core principle:</strong> RAG decides which approved content may be used. Mistral writes the response. Django and PostgreSQL remain authoritative for permissions, approvals, users, costs, statuses, and official business data.</div>
+
+<h2>2. Architecture</h2>
+<div class="flow">Employee uploads PDF
+        |
+        v
+Django Attachment and KnowledgeDocument
+        |
+        v
+pypdf extracts text page by page
+        |
+        v
+Text is split into overlapping chunks
+        |
+        v
+nomic-embed-text creates 768-dimensional vectors
+        |
+        v
+PostgreSQL + pgvector stores chunks and embeddings
+        |
+        v
+HOD approves the request and document
+        |
+        v
+Approved chunks become searchable
+        |
+        v
+User asks a question
+        |
+        v
+Question embedding retrieves nearest approved chunks
+        |
+        v
+Mistral receives the question plus retrieved evidence
+        |
+        v
+Grounded answer with source filename and page</div>
+
+<h2>3. Document Ingestion</h2>
+<p>Implemented in <code>backend/TNAbackend/ai/services.py</code> through <code>ingest_attachment()</code>.</p>
+<ol>
+<li>The uploaded file is stored as an <code>Attachment</code>.</li>
+<li>A related <code>KnowledgeDocument</code> is created.</li>
+<li>PDF pages are read with <code>pypdf</code>.</li>
+<li>Text is split into 1,200-character chunks with 200-character overlap.</li>
+<li>Each chunk is embedded by <code>nomic-embed-text</code>.</li>
+<li>Chunks store text, page number, embedding, and embedding model.</li>
+<li>The document is marked <code>INDEXED</code>, <code>FAILED</code>, or <code>UNSUPPORTED</code>.</li>
+</ol>
+<p>PDF extraction is implemented. Other file types are currently marked unsupported by the first RAG slice.</p>
+
+<h2>4. Approval and Search Eligibility</h2>
+<div class="flow">ATTACHMENT_WAIT
+    -> employee uploads document
+PENDING_DEPT
+    -> HOD submits/approves
+SUBMITTED
+    -> Managing Director approves
+APPROVED</div>
+<p>A document is searchable only when:</p>
+<ul><li><code>extraction_status = INDEXED</code></li><li><code>KnowledgeDocument.approval_status = APPROVED</code></li><li><code>Attachment.approval_status = APPROVED</code></li></ul>
+<p>Pending, rejected, failed, and unapproved documents are excluded before retrieval.</p>
+
+<h2>5. Authorization</h2>
+<p>The <code>authorized_documents()</code> function filters evidence before the language model sees it.</p>
+<table><tr><th>User</th><th>Accessible approved documents</th></tr>
+<tr><td>Administrator, HR, Trainer, Director</td><td>Approved organizational knowledge available to their role</td></tr>
+<tr><td>Department Head</td><td>Their own request documents and documents belonging to supervised employees</td></tr>
+<tr><td>Employee or participant</td><td>Approved documents connected to requests they own or participate in</td></tr>
+</table>
+<p>A request-specific query can include a request ID, which limits retrieval to that request.</p>
+
+<h2>6. Retrieval</h2>
+<p>Endpoints:</p>
+<ul><li><code>POST /api/v1/ai/knowledge/query/</code> retrieves approved evidence only.</li><li><code>POST /api/v1/ai/knowledge/answer/</code> retrieves evidence and generates an answer.</li></ul>
+<p>The question is embedded with <code>nomic-embed-text</code>. PostgreSQL pgvector orders matching chunks by cosine distance. If embeddings are unavailable, a text-term fallback is used.</p>
+
+<h2>7. Mistral LLM Generation</h2>
+<p>The service <code>generate_grounded_answer()</code> sends the question and selected evidence to the local Mistral model.</p>
+<p>Default local endpoint:</p>
+<pre>POST http://127.0.0.1:11434/api/chat
+Model: mistral</pre>
+<p>The prompt instructs the model to:</p>
+<ul><li>Answer only from supplied approved evidence.</li><li>Never invent unsupported facts.</li><li>Never approve requests or bypass permissions.</li><li>Never calculate authoritative budgets.</li><li>State when evidence is insufficient.</li><li>Use source citations.</li></ul>
+
+<h2>8. Answer Response</h2>
+<pre>{
+  "status": "COMPLETED",
+  "answer": "Grounded answer...",
+  "citations": ["chunk-id"],
+  "sources": [
+    {
+      "file_name": "training-manual.pdf",
+      "page_number": 3,
+      "text": "Approved source passage..."
+    }
+  ],
+  "error": ""
+}</pre>
+<p>Possible response states are <code>COMPLETED</code>, <code>FAILED</code>, and <code>INSUFFICIENT_EVIDENCE</code>.</p>
+
+<h2>9. Training Request Overview</h2>
+<p>When the HOD submits a request:</p>
+<ol><li>Request attachments become approved knowledge.</li><li>RAG retrieves the request evidence.</li><li>Mistral generates a grounded learning overview.</li><li>The overview is saved in <code>TrainingLearningOverview</code>.</li><li>The creator, participants, and next approver receive notifications.</li><li>The request moves to <code>SUBMITTED</code> for the Managing Director.</li></ol>
+<p>Endpoint:</p><pre>GET /api/v1/tna/requests/&lt;id&gt;/learning/</pre>
+
+<h2>10. Daily Learning Questions</h2>
+<p>Daily questions are stored in <code>TrainingDailyQuestion</code> and are grounded in approved request documents.</p>
+<ul><li>Questions begin on the request <code>start_date</code>.</li><li>Questions stop after <code>end_date</code>.</li><li>Only one question is stored per request per date.</li><li>The current question is created when the learning endpoint is opened.</li></ul>
+<div class="box"><strong>Current limitation:</strong> daily questions are generated lazily when requested. A background scheduler for midnight generation and daily push notifications is not yet implemented.</div>
+
+<h2>11. Frontend</h2>
+<p>The user-facing assistant is implemented in <code>tna-frontend/src/pages/KnowledgeAssistant.jsx</code>.</p>
+<ul><li>Users ask questions about approved documents.</li><li>Answers show grounded status.</li><li>Source filename and page are displayed.</li><li>Source excerpts are visible.</li><li>Technical model names are hidden from normal users.</li></ul>
+<p>Request tracking displays the learning overview and current daily question to the creator and participants.</p>
+
+<h2>12. Audit and Traceability</h2>
+<p>The system records:</p>
+<table><tr><th>Record</th><th>Purpose</th></tr>
+<tr><td><code>AIQueryAudit</code></td><td>User query, request, source IDs, and result count</td></tr>
+<tr><td><code>AIRequest</code></td><td>Operation, model, prompt version, source IDs, and payload</td></tr>
+<tr><td><code>AIResponse</code></td><td>Status, answer, citations, latency, and errors</td></tr>
+</table>
+
+<h2>13. Safety Boundaries</h2>
+<p>RAG and the LLM are used for retrieval, summaries, explanations, overviews, and learning questions only.</p>
+<p>Django and PostgreSQL control:</p>
+<ul><li>Authentication and authorization</li><li>Request status and approvals</li><li>Participant membership</li><li>Costs and budgets</li><li>Competency scores</li><li>Compliance records</li><li>Official workflow decisions</li></ul>
+
+<h2>14. Main Implementation Files</h2>
+<ul>
+<li><code>backend/TNAbackend/ai/services.py</code></li>
+<li><code>backend/TNAbackend/ai/models.py</code></li>
+<li><code>backend/TNAbackend/ai/views.py</code></li>
+<li><code>backend/TNAbackend/tna/views.py</code></li>
+<li><code>backend/TNAbackend/tna/models.py</code></li>
+<li><code>tna-frontend/src/pages/KnowledgeAssistant.jsx</code></li>
+<li><code>tna-frontend/src/pages/tna/TrainingRequests.jsx</code></li>
+<li><code>docs/RAG_IMPLEMENTATION_STATUS.md</code></li>
+</ul>
+
+<p class="small">RAG retrieves approved evidence. The LLM generates grounded language from that evidence. The backend remains the authority for system behavior.</p>
+</body>
+</html>

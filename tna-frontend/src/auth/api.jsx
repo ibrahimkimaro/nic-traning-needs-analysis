@@ -23,13 +23,13 @@ export const apiRequest = async (endpoint, method = 'GET', body = null) => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      if (response.statusText === 'Unauthorized') {
+      if (response.status === 401 && !endpoint.includes('/auth/login')) {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         window.location.href = '/';
       }
 
-      const errorMsg = errorData.detail ||
+      const errorMsg = errorData.detail || errorData.message ||
         (typeof errorData === 'object' ? Object.entries(errorData).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join(' | ') : null) ||
         'API request failed';
       throw new Error(errorMsg);
@@ -45,7 +45,9 @@ export const apiRequest = async (endpoint, method = 'GET', body = null) => {
 export const api = {
   apiRequest,
   auth: {
+    login: (credentials) => apiRequest('/auth/login/', 'POST', credentials),
     me: () => apiRequest('/auth/me/'),
+    changePassword: (data) => apiRequest('/auth/change-password/', 'POST', data),
     getUsers: (params = '') => apiRequest(`/auth/users/${params ? `?${params}` : ''}`),
     getUser: (id) => apiRequest(`/auth/users/${id}/`),
     createUser: (data) => apiRequest('/auth/users/', 'POST', data),
@@ -81,6 +83,7 @@ export const api = {
   },
 
   tna: {
+    getRecipients: () => apiRequest('/tna/recipients/'),
     getRequests: () => apiRequest('/tna/requests/'),
     getMyRequests: () => apiRequest('/tna/requests/me/'),
     getRequest: (id) => apiRequest(`/tna/requests/${id}/`),
@@ -88,35 +91,29 @@ export const api = {
     getParticipantCandidates: (search = '') => apiRequest(`/tna/participants/${search ? `?search=${encodeURIComponent(search)}` : ''}`),
     addRequestComment: (requestId, body) => apiRequest(`/tna/requests/${requestId}/comments/`, 'POST', { body }),
     respondToRequest: (requestId, response) => apiRequest(`/tna/requests/${requestId}/participant-response/`, 'POST', { response }),
-    getRequestLearning: (requestId) => apiRequest(`/tna/requests/${requestId}/learning/`),
-    uploadAttachment: (requestId, file, documentType) => {
+    uploadAttachment: (requestId, file, documentType, itemId = null) => {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('document_type', documentType);
+      if (documentType) {
+        formData.append('document_type', documentType);
+      }
+      if (itemId) {
+        formData.append('item_id', itemId);
+      }
       return apiRequest(`/tna/requests/${requestId}/attachments/`, 'POST', formData);
     },
     approveRequest: (id, actionData) => apiRequest(`/tna/requests/${id}/approve/`, 'POST', actionData),
+    deleteRequest: (id) => apiRequest(`/tna/requests/${id}/`, 'DELETE'),
     getGapAnalysis: (empId) => apiRequest(`/tna/analysis/${empId}/`),
     getRecommendations: (empId) => apiRequest(`/tna/recommendations/${empId}/`),
     getSkillMatrix: (deptId) => apiRequest(`/tna/skill-matrix/${deptId}/`),
-  },
 
-  ai: {
-    queryKnowledge: (query, requestId = null, limit = 5) => apiRequest('/ai/knowledge/query/', 'POST', {
-      query,
-      request_id: requestId,
-      limit,
-    }),
-    answerKnowledge: (query, requestId = null, limit = 5) => apiRequest('/ai/knowledge/answer/', 'POST', {
-      query,
-      request_id: requestId,
-      limit,
-    }),
-    reviewAttachment: (attachmentId, approvalStatus) => apiRequest(
-      `/ai/attachments/${attachmentId}/review/`,
-      'POST',
-      { approval_status: approvalStatus },
-    ),
+    // Deterministic Enterprise Macro Features (Zero AI)
+    evaluateBottleneck: (data) => apiRequest('/tna/macro/bottleneck-evaluate/', 'POST', data),
+    getWeightedSkillMatrix: () => apiRequest('/tna/macro/weighted-matrix/'),
+    getTelemetryStreams: () => apiRequest('/tna/macro/telemetry/'),
+    getEarlyWarnings: () => apiRequest('/tna/macro/early-warnings/'),
+    getAnonymizedMacroNeeds: () => apiRequest('/tna/macro/anonymized-needs/'),
   },
 
   training: {
@@ -130,7 +127,15 @@ export const api = {
 
   compliance: {
     getCertifications: () => apiRequest('/compliance/certifications/'),
+    createCertification: (data) => apiRequest('/compliance/certifications/', 'POST', data),
     getRequirements: () => apiRequest('/compliance/requirements/'),
+    createRequirement: (data) => apiRequest('/compliance/requirements/', 'POST', data),
+    getExpiring: () => apiRequest('/compliance/expiring/'),
+  },
+
+  competencies: {
+    getCompetencies: () => apiRequest('/competencies/competencies/'),
+    getPositionRequirements: (posId) => apiRequest(`/competencies/positions/${posId}/requirements/`),
   },
 
   notifications: {

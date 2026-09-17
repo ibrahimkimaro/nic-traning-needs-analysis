@@ -80,3 +80,17 @@ button {
   cursor: pointer;
   font-family: inherit;
 }
+
+/* Global High-Contrast Inputs for Organizational Enterprise Readability */
+input, select, textarea {
+  color: #0f172a !important; /* Deep dark slate-900 text */
+  font-weight: 500;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #94a3b8 !important; /* Slate-400 for clear differentiation from typed text */
+}
+
+input:focus, select:focus, textarea:focus {
+  color: #0f172a !important;
+}

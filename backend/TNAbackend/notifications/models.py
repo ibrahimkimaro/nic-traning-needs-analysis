@@ -6,10 +6,22 @@ from accounts.models import User
 class Notification(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
-    channel = models.CharField(max_length=20, choices=[('EMAIL', 'Email'), ('SMS', 'SMS')])
+    channel = models.CharField(
+        max_length=20, 
+        default='IN_APP', 
+        choices=[('IN_APP', 'In-app'), ('EMAIL', 'Email'), ('SMS', 'SMS')]
+    )
     message = models.TextField()
     sent_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, default='SENT', choices=[('SENT', 'Sent'), ('FAILED', 'Failed'), ('DELIVERED', 'Delivered')])
+    status = models.CharField(
+        max_length=20, 
+        default='SENT', 
+        choices=[('SENT', 'Sent'), ('FAILED', 'Failed'), ('DELIVERED', 'Delivered')]
+    )
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-sent_at', '-created_at']
 
     def __str__(self):
-        return f"Notification to {self.user} via {self.channel}"
+        return f"Notification to {self.user} via {self.channel}: {self.message[:30]}"

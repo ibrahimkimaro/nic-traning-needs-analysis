@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Search, Shield, Lock, UserPlus, Loader2, MoreVertical, X, Save,
   RefreshCw, User, Briefcase, Key, Building2, CheckCircle2, AlertCircle,
   Trash2, Edit3, Mail, Hash, Layers, Check, Sparkles
 } from 'lucide-react';
 import { api } from '../auth/api';
+
+const ROLE_META = {
+  ADMIN: { label: 'Admin', desc: 'System Administrator', badge: 'bg-rose-100 text-rose-800 border-rose-200 font-bold' },
+  HR_MANAGER: { label: 'HR Manager', desc: 'Strategic Approval Gate', badge: 'bg-purple-100 text-purple-800 border-purple-200 font-bold' },
+  HRO: { label: 'HRO', desc: 'Human Resource Officer', badge: 'bg-teal-100 text-teal-800 border-teal-200 font-bold' },
+  DEPT_HEAD: { label: 'HOD / Dept Head', desc: 'Department Endorsement', badge: 'bg-blue-100 text-blue-800 border-blue-200 font-bold' },
+  FINANCE: { label: 'Finance', desc: 'Budget Sign-off', badge: 'bg-amber-100 text-amber-800 border-amber-200 font-bold' },
+  DIRECTOR: { label: 'Director', desc: 'Executive Directorate', badge: 'bg-indigo-100 text-indigo-800 border-indigo-200 font-bold' },
+  EMPLOYEE: { label: 'Employee', desc: 'Standard Staff', badge: 'bg-slate-100 text-slate-700 border-slate-200 font-medium' },
+  TRAINER: { label: 'Trainer', desc: 'Internal Trainer', badge: 'bg-emerald-100 text-emerald-800 border-emerald-200 font-medium' },
+};
 
 const StaffManagement = () => {
   const [staff, setStaff] = useState([]);
@@ -57,7 +69,13 @@ const StaffManagement = () => {
       setStaff(staffData || []);
       setDepartments(deptsData || []);
       setPositions(posData || []);
-      setRoles(rolesData || []);
+
+      // Guarantee standard roles including HRO are present
+      const loadedRoles = rolesData && rolesData.length > 0 ? [...rolesData] : [];
+      if (!loadedRoles.some(r => r.role_name === 'HRO')) {
+        loadedRoles.push({ id: 'role_hro', role_name: 'HRO', description: 'Human Resource Officer' });
+      }
+      setRoles(loadedRoles);
     } catch (err) {
       setError(err.message || 'Failed to load staff information.');
     } finally {
@@ -313,7 +331,7 @@ const StaffManagement = () => {
           <input
             type="text"
             placeholder="Search by name, email, employee #, role..."
-            className="block w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#264033] transition-all"
+            className="block w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 font-semibold text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#264033] focus:border-[#264033] shadow-sm transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -323,7 +341,7 @@ const StaffManagement = () => {
           <select
             value={selectedDeptFilter}
             onChange={(e) => setSelectedDeptFilter(e.target.value)}
-            className="px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#264033]"
+            className="px-3.5 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#264033] focus:border-[#264033] shadow-sm"
           >
             <option value="">All Departments</option>
             {departments.map(d => (
@@ -334,11 +352,13 @@ const StaffManagement = () => {
           <select
             value={selectedRoleFilter}
             onChange={(e) => setSelectedRoleFilter(e.target.value)}
-            className="px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#264033]"
+            className="px-3.5 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#264033] focus:border-[#264033] shadow-sm"
           >
             <option value="">All Roles</option>
             {roles.map(r => (
-              <option key={r.id} value={r.role_name}>{r.role_name}</option>
+              <option key={r.id} value={r.role_name}>
+                {ROLE_META[r.role_name]?.label || r.role_name}
+              </option>
             ))}
           </select>
         </div>
@@ -364,9 +384,11 @@ const StaffManagement = () => {
                   <tr key={s.id} className="hover:bg-slate-50/70 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[#264033]/10 text-[#264033] flex items-center justify-center text-sm font-bold ring-2 ring-white shadow-sm shrink-0">
-                          {(s.first_name || s.username || 'U').charAt(0).toUpperCase()}
-                        </div>
+                        <img
+                          src="/userAvatar.jpeg"
+                          alt=""
+                          className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm shrink-0 border border-slate-200"
+                        />
                         <div>
                           <p className="text-sm font-bold text-slate-900">{s.full_name || `${s.first_name} ${s.last_name}`.trim() || s.username}</p>
                           <p className="text-xs text-slate-500 flex items-center gap-1 font-mono">
@@ -378,22 +400,26 @@ const StaffManagement = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
-                        <p className="text-sm text-slate-700 flex items-center gap-1.5">
+                        <p className="text-sm text-slate-700 flex items-center gap-1.5 font-medium">
                           <Mail className="w-3.5 h-3.5 text-slate-400" />
                           {s.email || 'N/A'}
                         </p>
                         <div className="flex flex-wrap gap-1 mt-0.5">
                           {s.roles && s.roles.length > 0 ? (
-                            s.roles.map(r => (
-                              <span
-                                key={r.id || r.role_name}
-                                className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200"
-                              >
-                                {r.role_name}
-                              </span>
-                            ))
+                            s.roles.map(r => {
+                              const rName = r.role_name;
+                              const meta = ROLE_META[rName] || { label: rName, badge: 'bg-slate-100 text-slate-700 border-slate-200 font-bold' };
+                              return (
+                                <span
+                                  key={r.id || rName}
+                                  className={`text-[10px] px-2 py-0.5 rounded-md border ${meta.badge}`}
+                                >
+                                  {rName === 'HRO' ? 'HRO (Officer)' : meta.label}
+                                </span>
+                              );
+                            })
                           ) : (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-500">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200">
                               EMPLOYEE
                             </span>
                           )}
@@ -452,9 +478,9 @@ const StaffManagement = () => {
       </div>
 
       {/* Unified All-in-One Staff Modal (No Tab Confusion) */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-top-6 duration-200">
+      {isModalOpen && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto">
             {/* Modal Header */}
             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/90 shrink-0">
               <div className="flex items-center gap-3">
@@ -495,26 +521,26 @@ const StaffManagement = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600">First Name *</label>
+                    <label className="text-xs font-bold text-slate-700">First Name *</label>
                     <input
                       type="text"
                       name="first_name"
                       value={formData.first_name}
                       onChange={handleInputChange}
                       placeholder="e.g. Amani"
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#264033] outline-none"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#264033] focus:border-[#264033] outline-none shadow-sm"
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600">Last Name *</label>
+                    <label className="text-xs font-bold text-slate-700">Last Name *</label>
                     <input
                       type="text"
                       name="last_name"
                       value={formData.last_name}
                       onChange={handleInputChange}
                       placeholder="e.g. Kimaro"
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#264033] outline-none"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#264033] focus:border-[#264033] outline-none shadow-sm"
                       required
                     />
                   </div>
@@ -523,7 +549,7 @@ const StaffManagement = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-slate-600">Employee Number</label>
+                      <label className="text-xs font-bold text-slate-700">Employee Number</label>
                       <button
                         type="button"
                         onClick={generateEmployeeNumber}
@@ -538,19 +564,19 @@ const StaffManagement = () => {
                       value={formData.employee_number}
                       onChange={handleInputChange}
                       placeholder="e.g. NIC-1045"
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#264033] outline-none font-mono"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#264033] focus:border-[#264033] outline-none font-mono shadow-sm"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600">Work Email Address *</label>
+                    <label className="text-xs font-bold text-slate-700">Work Email Address *</label>
                     <input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
                       placeholder="e.g. amani.kimaro@nicinsurance.co.tz"
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#264033] outline-none"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#264033] focus:border-[#264033] outline-none shadow-sm"
                       required
                     />
                   </div>
@@ -565,12 +591,12 @@ const StaffManagement = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600">Department</label>
+                    <label className="text-xs font-bold text-slate-700">Department</label>
                     <select
                       name="dept"
                       value={formData.dept}
                       onChange={handleInputChange}
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#264033] outline-none font-medium"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-[#264033] focus:border-[#264033] outline-none shadow-sm"
                     >
                       <option value="">-- Select Department --</option>
                       {departments.map(d => (
@@ -580,12 +606,12 @@ const StaffManagement = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600">Position / Job Title</label>
+                    <label className="text-xs font-bold text-slate-700">Position / Job Title</label>
                     <select
                       name="position"
                       value={formData.position}
                       onChange={handleInputChange}
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#264033] outline-none font-medium"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-[#264033] focus:border-[#264033] outline-none shadow-sm"
                     >
                       <option value="">-- Select Position --</option>
                       {availablePositions.map(p => (
@@ -597,12 +623,12 @@ const StaffManagement = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600">Direct Supervisor</label>
+                    <label className="text-xs font-bold text-slate-700">Direct Supervisor</label>
                     <select
                       name="supervisor"
                       value={formData.supervisor}
                       onChange={handleInputChange}
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#264033] outline-none font-medium"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-[#264033] focus:border-[#264033] outline-none shadow-sm"
                     >
                       <option value="">None (Top Level / Direct Executive)</option>
                       {staff
@@ -616,12 +642,12 @@ const StaffManagement = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600">Employment Status</label>
+                    <label className="text-xs font-bold text-slate-700">Employment Status</label>
                     <select
                       name="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#264033] outline-none font-medium"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-[#264033] focus:border-[#264033] outline-none shadow-sm"
                     >
                       <option value="ACTIVE">Active</option>
                       <option value="ON_LEAVE">On Leave</option>
@@ -639,21 +665,21 @@ const StaffManagement = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600">Username *</label>
+                    <label className="text-xs font-bold text-slate-700">Username *</label>
                     <input
                       type="text"
                       name="username"
                       value={formData.username}
                       onChange={handleInputChange}
                       placeholder="e.g. amani.kimaro"
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#264033] outline-none font-mono"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#264033] focus:border-[#264033] outline-none font-mono shadow-sm"
                       required
                     />
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-slate-600">
+                      <label className="text-xs font-bold text-slate-700">
                         {selectedMember ? 'Change Password (Optional)' : 'Initial Password'}
                       </label>
                       <button
@@ -668,7 +694,7 @@ const StaffManagement = () => {
                       <input
                         type="text"
                         name="password"
-                        className="w-full pl-9 pr-3.5 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#264033] outline-none font-mono"
+                        className="w-full pl-9 pr-3.5 py-2.5 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#264033] focus:border-[#264033] outline-none font-mono shadow-sm"
                         placeholder={selectedMember ? 'Leave blank to keep current password' : 'e.g. password123'}
                         value={formData.password}
                         onChange={handleInputChange}
@@ -682,25 +708,33 @@ const StaffManagement = () => {
 
                 {/* System Access Roles Chips */}
                 <div className="space-y-2 pt-2 border-t border-slate-200/60">
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                     <Layers className="w-3.5 h-3.5 text-[#264033]" /> Assigned Security Roles
                   </label>
                   <p className="text-[11px] text-slate-500">Select all roles that apply to this staff member's access level:</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                     {roles.map((r) => {
                       const isChecked = (formData.role_ids || []).includes(r.role_name);
+                      const meta = ROLE_META[r.role_name] || { label: r.role_name, desc: 'System Role' };
                       return (
                         <button
                           type="button"
                           key={r.id || r.role_name}
                           onClick={() => handleRoleToggle(r.role_name)}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold text-left border transition-all flex items-center justify-between ${isChecked
-                            ? 'bg-[#264033] text-white border-[#264033] shadow-sm'
-                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                          className={`p-2.5 rounded-xl text-left border transition-all flex flex-col justify-between gap-1 ${isChecked
+                            ? 'bg-[#264033] text-white border-[#264033] shadow-md ring-2 ring-[#264033]/20'
+                            : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-50 hover:border-slate-400 shadow-sm'
                             }`}
                         >
-                          <span>{r.role_name}</span>
-                          {isChecked && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
+                          <div className="flex items-center justify-between w-full">
+                            <span className={`text-xs font-black tracking-tight ${isChecked ? 'text-white' : 'text-slate-900'}`}>
+                              {r.role_name}
+                            </span>
+                            {isChecked && <Check className="w-4 h-4 text-emerald-300 stroke-[3]" />}
+                          </div>
+                          <span className={`text-[10px] leading-tight ${isChecked ? 'text-emerald-100/90' : 'text-slate-500'}`}>
+                            {meta.desc}
+                          </span>
                         </button>
                       );
                     })}
@@ -737,7 +771,8 @@ const StaffManagement = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

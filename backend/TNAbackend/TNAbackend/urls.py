@@ -2,7 +2,9 @@
 URL configuration for TNAbackend project.
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.conf import settings
+from django.views.static import serve
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -14,5 +16,9 @@ urlpatterns = [
     path('api/v1/training/', include('training.urls')),
     path('api/v1/budget/', include('budget.urls')),
     path('api/v1/compliance/', include('compliance.urls')),
-    path('api/v1/ai/', include('ai.urls')),
+    path('api/v1/notifications/', include('notifications.urls')),
+
+    # Media & file uploads routes
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+    re_path(r'^training_attachments/(?P<path>.*)$', serve, {'document_root': settings.BASE_DIR / 'training_attachments'}),
 ]

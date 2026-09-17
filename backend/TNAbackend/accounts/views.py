@@ -6,6 +6,7 @@ from django.db.models import Q
 from .models import User, Role, Department, Position
 from .serializers import (
     UserSerializer, UserCreateUpdateSerializer, UserProfileUpdateSerializer,
+    ChangePasswordSerializer,
     RoleSerializer, DepartmentSerializer, PositionSerializer
 )
 
@@ -54,6 +55,19 @@ class UserProfileUpdateView(generics.UpdateAPIView):
     def get_object(self):
         return self.request.user
 
+class ChangePasswordView(APIView):
+    """
+    Change user password with current password verification.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "Password has been changed successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -64,6 +78,7 @@ class RoleListView(generics.ListAPIView):
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
     permission_classes = [permissions.IsAuthenticated]
+   
 
 class UserListView(generics.ListCreateAPIView):
     """
@@ -77,11 +92,13 @@ class UserListView(generics.ListCreateAPIView):
         return UserSerializer
 
     def get_queryset(self):
+
+      
         user = self.request.user
         queryset = User.objects.all().select_related('dept', 'position', 'supervisor').prefetch_related('roles')
 
-        # Admin and HR can see all users
-        if user.is_superuser or user.is_staff or user.roles.filter(role_name__in=['ADMIN', 'HR_MANAGER']).exists():
+        # Admin and HR (HR_MANAGER, HRO) can see all users
+        if user.is_superuser or user.is_staff or user.roles.filter(role_name__in=['ADMIN', 'HR_MANAGER', 'HRO']).exists():
             pass
         elif user.roles.filter(role_name='DEPT_HEAD').exists():
             # Supervisors see their subordinates and themselves

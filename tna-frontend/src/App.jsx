@@ -18,6 +18,7 @@ import SystemAdministration from './pages/SystemAdministration';
 import Login from './pages/Login';
 import EnterpriseAnalytics from './pages/enterprise/EnterpriseAnalytics';
 import EnterpriseSettings from './pages/enterprise/EnterpriseSettings';
+import ComplianceManagement from './pages/compliance/ComplianceManagement';
 import './App.css';
 
 const ProtectedRoute = ({ children }) => {
@@ -59,6 +60,23 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/home/:tab"
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Friendly Top-Level Route Aliases for Direct Access */}
+        <Route path="/requests" element={<Navigate to="/home/requests" replace />} />
+        <Route path="/approvals" element={<Navigate to="/home/requests-approval" replace />} />
+        <Route path="/requests-approval" element={<Navigate to="/home/requests-approval" replace />} />
+        <Route path="/competencies" element={<Navigate to="/home/competencies" replace />} />
+        <Route path="/gap-analysis" element={<Navigate to="/home/competencies" replace />} />
+        <Route path="/enrollments" element={<Navigate to="/home/enrollments" replace />} />
+        <Route path="/compliance" element={<Navigate to="/home/compliance" replace />} />
 
         {/* Administrative & Strategic Management Suite */}
         <Route
@@ -84,6 +102,9 @@ const App = () => {
           <Route path="training/providers" element={<ProviderManagement />} />
           <Route path="training/programs" element={<ProgramManagement />} />
           <Route path="training/enrollments" element={<EnrollmentManagement />} />
+
+          {/* Certifications & Compliance */}
+          <Route path="compliance" element={<ComplianceManagement />} />
 
           {/* Budget Oversight */}
           <Route path="budget" element={<BudgetOversight />} />

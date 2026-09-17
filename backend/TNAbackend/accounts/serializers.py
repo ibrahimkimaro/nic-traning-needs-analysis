@@ -35,7 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'first_name', 'last_name', 'full_name',
             'employee_number', 'dept', 'dept_name', 'position', 'position_title',
             'supervisor', 'supervisor_name', 'status', 'language_pref', 'roles',
-            'is_active', 'is_staff', 'date_joined'
+            'is_active', 'is_staff', 'is_superuser', 'date_joined'
         ]
         read_only_fields = ['id', 'date_joined']
 
@@ -122,3 +122,29 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True, min_length=6)
+    confirm_password = serializers.CharField(required=True, write_only=True)
+
+    def validate_current_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Current password is not correct.")
+        return value
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError({"confirm_password": "New passwords do not match."})
+        if data['new_password'] == data['current_password']:
+            raise serializers.ValidationError({"new_password": "New password cannot be the same as the current password."})
+        return data
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
+

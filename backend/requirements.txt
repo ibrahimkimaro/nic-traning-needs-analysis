@@ -7,3 +7,5 @@ celery==5.4.0
 redis==5.0.8
 pypdf>=5,<7
 pgvector>=0.3,<1
+django-cors-headers>=4.0.0
+gunicorn>=21.0.0

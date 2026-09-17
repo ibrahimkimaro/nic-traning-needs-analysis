@@ -22,7 +22,7 @@ const Header = ({ pageTitle }) => {
           </div>
           <div className="user-profile-mini">
             <div className="user-name">Super Admin</div>
-            <div className="user-avatar-small">S</div>
+            <img src="/userAvatar.jpeg" alt="User Avatar" className="w-8 h-8 rounded-full object-cover border border-slate-200" />
           </div>
         </div>
       </div>

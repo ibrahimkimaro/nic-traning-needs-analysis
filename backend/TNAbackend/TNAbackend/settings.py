@@ -51,7 +51,6 @@ INSTALLED_APPS = [
     'budget',
     'compliance',
     'notifications',
-    'ai',
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -130,6 +129,14 @@ DATABASES = {
     }
 }
 
+import sys
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    }
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -175,3 +182,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Media files (Uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

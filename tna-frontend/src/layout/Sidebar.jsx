@@ -37,7 +37,7 @@ const Sidebar = ({ activePage, setActivePage, onLogout }) => {
 
       <div className="sidebar-footer">
         <div className="user-info">
-          <div className="user-avatar">S</div>
+          <img src="/userAvatar.jpeg" alt="User Avatar" className="w-9 h-9 rounded-full object-cover border border-slate-300" />
           <div className="user-details">
             <div className="user-name">Super Admin</div>
             <div className="user-role">System Administrator</div>

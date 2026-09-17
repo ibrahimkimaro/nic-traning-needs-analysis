@@ -8,15 +8,25 @@ const GapAnalysisView = () => {
   const [gaps, setGaps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [analysisLoading, setAnalysisLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredEmployees = employees.filter((emp) => {
+    const name = (emp.full_name || `${emp.first_name || ''} ${emp.last_name || ''} ${emp.username || ''}`).toLowerCase();
+    return name.includes(searchTerm.toLowerCase());
+  });
 
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const data = await api.organizations.getEmployees();
-        setEmployees(data);
+        const data = await api.auth.getUsers();
+        setEmployees(data || []);
       } catch (err) {
-        setError('Failed to load employees');
+        try {
+          const fallbackData = await api.organizations.getEmployees();
+          setEmployees(fallbackData || []);
+        } catch (e) {
+          setError('Failed to load employees');
+        }
       } finally {
         setLoading(false);
       }
@@ -64,25 +74,20 @@ const GapAnalysisView = () => {
               <input
                 type="text"
                 placeholder="Search employee..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#264033] transition-all"
-                onChange={(e) => {
-                  const term = e.target.value.toLowerCase();
-                  const filtered = employees.filter(emp =>
-                    (emp.full_name || `${emp.first_name} ${emp.last_name}`).toLowerCase().includes(term)
-                  );
-                  // This is a simple implementation, normally we'd have a separate list
-                }}
               />
             </div>
             <div className="overflow-y-auto max-h-[60vh] space-y-1 pr-2">
-              {employees.map(emp => (
+              {filteredEmployees.map(emp => (
                 <button
                   key={emp.id}
                   onClick={() => fetchAnalysis(emp.id)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${selectedEmployee?.id === emp.id ? 'bg-emerald-50 text-emerald-700 font-semibold ring-1 ring-emerald-200' : 'text-slate-600 hover:bg-slate-50'}`}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2.5 ${selectedEmployee?.id === emp.id ? 'bg-[#264033] text-white font-semibold shadow-sm' : 'text-slate-700 hover:bg-slate-100 font-medium'}`}
                 >
-                  <User className="w-3 h-3" />
-                  {emp.full_name || `${emp.first_name} ${emp.last_name}`}
+                  <img src="/userAvatar.jpeg" alt="" className="w-5 h-5 rounded-full object-cover shrink-0 border border-slate-200" />
+                  <span className="truncate">{emp.full_name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.username}</span>
                 </button>
               ))}
             </div>
@@ -107,50 +112,53 @@ const GapAnalysisView = () => {
           ) : (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">{selectedEmployee.full_name || `${selectedEmployee.first_name} ${selectedEmployee.last_name}`}</h2>
-                  <p className="text-sm text-slate-500">Position: {selectedEmployee.position?.title || 'N/A'}</p>
+                <div className="flex items-center gap-4">
+                  <img src="/userAvatar.jpeg" alt="" className="w-12 h-12 rounded-full object-cover border border-slate-200 shadow-sm" />
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">{selectedEmployee.full_name || `${selectedEmployee.first_name || ''} ${selectedEmployee.last_name || ''}`.trim() || selectedEmployee.username}</h2>
+                    <p className="text-sm text-slate-500">Position: {selectedEmployee.position?.title || selectedEmployee.position_title || 'Assigned Staff'}</p>
+                  </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Gaps</p>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Identified Gaps</p>
                   <p className="text-2xl font-black text-[#264033]">{gaps.filter(g => g.gap > 0).length}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {gaps.length > 0 ? gaps.map((gap, idx) => (
-                  <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 hover:border-emerald-200 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-slate-900 truncate">{gap.competency}</h4>
+                  <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 hover:border-slate-300 transition-colors">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="font-bold text-slate-900 truncate text-sm">{gap.competency}</h4>
                       {gap.gap === 0 ? (
-                        <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 uppercase">
+                        <span className="shrink-0 flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 uppercase">
                           <CheckCircle2 className="w-3 h-3" /> Met
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md bg-amber-100 text-amber-700 uppercase">
+                        <span className="shrink-0 flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 uppercase">
                           <AlertTriangle className="w-3 h-3" /> Gap: {gap.gap}
                         </span>
                       )}
                     </div>
                     <div className="space-y-2">
-                      <div className="flex justify-between text-xs font-medium">
+                      <div className="flex justify-between text-xs font-semibold">
                         <span className="text-slate-500">Current Level</span>
-                        <span className="text-slate-900">{gap.current}</span>
+                        <span className="text-slate-900">Level {gap.current} / 5</span>
                       </div>
                       <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                         <div
-                          className={`h-full transition-all duration-500 ${gap.gap === 0 ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                          style={{ width: `${(gap.current / gap.required) * 100}%` }}
+                          className="h-full bg-[#264033] rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min(100, (gap.current / gap.required) * 100)}%` }}
                         />
                       </div>
-                      <div className="flex justify-between text-xs font-medium">
-                        <span className="text-slate-500">Required Level</span>
-                        <span className="text-slate-900">{gap.required}</span>
+                      <div className="flex justify-between text-xs font-semibold">
+                        <span className="text-slate-500">Target Standard</span>
+                        <span className="text-slate-900">Level {gap.required} / 5</span>
                       </div>
                     </div>
-                    <div className="pt-3 border-t border-slate-50 flex items-center justify-between">
-                      <span className="text-[10px] text-slate-400 uppercase font-bold">Priority: {gap.priority}</span>
-                      <button className="text-[#264033] text-xs font-bold hover:underline">Get Recommendations</button>
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Priority: {gap.priority}</span>
+                      <span className="text-[#264033] text-xs font-bold">Real DB Record</span>
                     </div>
                   </div>
                 )) : (

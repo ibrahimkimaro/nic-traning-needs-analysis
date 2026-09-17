@@ -2,12 +2,12 @@ from rest_framework import generics, permissions
 from .models import ComplianceRequirement, EmployeeCertification
 from .serializers import ComplianceRequirementSerializer, EmployeeCertificationSerializer
 
-class ComplianceRequirementListView(generics.ListAPIView):
+class ComplianceRequirementListView(generics.ListCreateAPIView):
     queryset = ComplianceRequirement.objects.all()
     serializer_class = ComplianceRequirementSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-class EmployeeCertificationListView(generics.ListAPIView):
+class EmployeeCertificationListView(generics.ListCreateAPIView):
     serializer_class = EmployeeCertificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 

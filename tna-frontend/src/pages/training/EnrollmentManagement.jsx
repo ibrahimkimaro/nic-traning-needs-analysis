@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Filter, UserPlus, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { api } from '../../auth/api';
 
@@ -128,8 +129,8 @@ const EnrollmentManagement = () => {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-md ${en.completion_status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' :
-                          en.completion_status === 'FAILED' ? 'bg-red-100 text-red-700' :
-                            'bg-blue-100 text-blue-700'
+                        en.completion_status === 'FAILED' ? 'bg-red-100 text-red-700' :
+                          'bg-blue-100 text-blue-700'
                         }`}>
                         {en.completion_status}
                       </span>
@@ -149,9 +150,9 @@ const EnrollmentManagement = () => {
       </div>
 
       {/* Enrollment Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-top-8 duration-300 ease-out">
+      {isModalOpen && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden my-auto">
             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-[#264033] text-white rounded-lg">
@@ -224,7 +225,8 @@ const EnrollmentManagement = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

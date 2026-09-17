@@ -1,0 +1,63 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: tna_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nic_training_needs_analysis
+      POSTGRES_USER: nicinsurance
+      POSTGRES_PASSWORD: nicinsurance123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nicinsurance -d nic_training_needs_analysis"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tna_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      DB_NAME: nic_training_needs_analysis
+      DB_USER: nicinsurance
+      DB_PASSWORD: nicinsurance123
+      DB_HOST: db
+      DB_PORT: "5432"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./backend/TNAbackend:/app
+      - media_data:/app/media
+      - attachments_data:/app/training_attachments
+
+  frontend:
+    build:
+      context: ./tna-frontend
+      dockerfile: Dockerfile
+    container_name: tna_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8081/api/v1
+      - VITE_BACKEND_ORIGIN=http://localhost:8081
+    volumes:
+      - ./tna-frontend:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:
+  media_data:
+  attachments_data:

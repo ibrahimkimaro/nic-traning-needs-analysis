@@ -7,6 +7,7 @@ class Role(TimeStampedModel):
     ROLE_CHOICES = [
         ('ADMIN', 'System Administrator'),
         ('HR_MANAGER', 'HR / Training Manager'),
+        ('HRO', 'Human Resource Officer'),
         ('DEPT_HEAD', 'Department Head / Supervisor'),
         ('FINANCE', 'Finance / Budget Approver'),
         ('EMPLOYEE', 'Employee'),
